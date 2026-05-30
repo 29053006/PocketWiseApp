@@ -1,181 +1,108 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:myapp/data/database_helper.dart';
+import 'package:myapp/main.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  _SettingsScreenState createState() => _SettingsScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool isReminderOn = true;
-
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings', style: GoogleFonts.lato(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(icon: const Icon(Icons.help_outline), onPressed: () {}),
-        ],
+        title: const Text('Settings'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildOfflineModeCard(),
-            const SizedBox(height: 24),
-            Text('REMINDERS', style: GoogleFonts.lato(color: Colors.grey, fontWeight: FontWeight.bold)),
-            _buildRemindersCard(),
-            const SizedBox(height: 24),
-            Text('PRIVACY & DATA', style: GoogleFonts.lato(color: Colors.grey, fontWeight: FontWeight.bold)),
-            _buildPrivacyCard(),
-            const SizedBox(height: 24),
-            Text('ABOUT', style: GoogleFonts.lato(color: Colors.grey, fontWeight: FontWeight.bold)),
-            _buildAboutCard(),
-            const SizedBox(height: 24),
-            _buildPremiumCard(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOfflineModeCard() {
-    return Card(
-      color: Colors.teal[50],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Icon(Icons.cloud_off, color: Colors.teal[400]),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Offline Mode Active', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Your data is stored locally for maximum privacy.'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRemindersCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Column(
+      body: ListView(
         children: [
+          _buildSectionHeader(context, 'Appearance'),
           SwitchListTile(
-            title: const Text('Daily Local Reminder'),
-            subtitle: const Text('Get a nudge to log your expenses'),
-            value: isReminderOn,
-            onChanged: (bool value) {
-              setState(() {
-                isReminderOn = value;
-              });
+            title: const Text('Dark Mode'),
+            value: themeProvider.themeMode == ThemeMode.dark,
+            onChanged: (value) {
+              themeProvider.toggleTheme();
             },
-            activeColor: Colors.teal[400],
           ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
+          SwitchListTile(
+            title: const Text('Use System Theme'),
+            value: themeProvider.themeMode == ThemeMode.system,
+            onChanged: (value) {
+              if (value) {
+                themeProvider.setSystemTheme();
+              } else {
+                // To toggle off system theme, we can default to light theme
+                if (themeProvider.themeMode == ThemeMode.system) {
+                  themeProvider.toggleTheme();
+                }
+              }
+            },
+          ),
+          const Divider(),
+          _buildSectionHeader(context, 'Database'),
           ListTile(
-            leading: const Icon(Icons.access_time),
-            title: const Text('Reminder Time'),
-            trailing: Text('08:00 p.m.', style: GoogleFonts.lato(color: Colors.grey)),
+            title: const Text('Clear Database'),
+            subtitle: const Text('Delete all transactions from the database.'),
+            trailing: const Icon(Icons.delete_forever),
+            onTap: () => _showClearDatabaseDialog(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPrivacyCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.upload_file, color: Colors.blue),
-            title: const Text('Export Data (CSV)'),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: Icon(Icons.delete_forever, color: Colors.red[400]),
-            title: Text('Clear All Data', style: TextStyle(color: Colors.red[400])),
-            onTap: () {},
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text(
-              'Clearing your data is permanent. Since PocketWise operates in Offline Mode, we do not have backups on our servers.',
-              style: GoogleFonts.lato(color: Colors.grey, fontSize: 12),
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.secondary,
             ),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildAboutCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Version'),
-            trailing: Text('2.4.1 (Build 890)', style: GoogleFonts.lato(color: Colors.grey)),
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          ListTile(
-            leading: const Icon(Icons.description_outlined),
-            title: const Text('Terms of Service'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          ListTile(
-            leading: const Icon(Icons.shield_outlined),
-            title: const Text('Privacy Policy'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
-        ],
-      ),
-    );
-  }
+  void _showClearDatabaseDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: const Text(
+              'Are you sure you want to delete all transactions? This action cannot be undone.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () async {
+                await DatabaseHelper().deleteAllTransactions();
 
-  Widget _buildPremiumCard() {
-    return Card(
-      color: Colors.teal[400],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('PocketWise Premium', style: GoogleFonts.lato(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('Unlock advanced analytics and multi-device sync.', style: GoogleFonts.lato(color: Colors.white)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.teal[400],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              ),
-              child: const Text('Upgrade Now'),
+                if (!mounted) return;
+
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All transactions have been deleted.'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

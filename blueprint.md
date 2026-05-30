@@ -28,3 +28,16 @@ PocketWise is a Flutter application designed for personal finance management. It
 ### Execution
 
 The refactoring has been completed as planned. All screen files are now located in the `lib/screens` directory, and the `lib/main.dart` file has been updated with the correct import paths. This new structure improves the organization of the project and makes it easier to navigate and maintain.
+
+## SQLite Integration
+
+### Plan
+
+1.  **Add Dependencies:** Add `sqflite` and `path_provider` to `pubspec.yaml`.
+2.  **Create Data Model:** Create a `Transaction` model in `lib/models/transaction_model.dart`.
+3.  **Create Database Helper:** Create a `DatabaseHelper` class in `lib/data/database_helper.dart` to handle all database operations.
+4.  **Integrate with UI:** Update the UI screens (`add_transaction.dart`, `dashboard_screen.dart`, `transaction_history.dart`, `statistics_screen.dart`) to use the `DatabaseHelper` to manage transactions.
+
+### Execution
+
+The SQLite integration has been completed as planned. The application now uses a local SQLite database to persist transaction data. All UI screens have been updated to interact with the database, providing a fully functional and persistent user experience.

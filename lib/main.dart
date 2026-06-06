@@ -1,30 +1,54 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:myapp/providers/currency_provider.dart';
 import 'package:myapp/screens/add_transaction.dart';
 import 'package:myapp/screens/dashboard_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
 import 'package:myapp/screens/statistics_screen.dart';
 import 'package:myapp/screens/transaction_history.dart';
+import 'package:myapp/screens/welcome_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'dart:io' show Platform;
+import 'dart:developer' as developer;
 
 // Route Observer
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
-void main() {
-  if (kIsWeb) {
-    databaseFactory = databaseFactoryFfiWeb;
-  } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+void main() async {
+  developer.log('App starting...');
+  final startTime = DateTime.now();
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize FFI for sqflite on desktop
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+  } else if (kIsWeb) {
+    // Use sqflite_common_ffi_web for web
+    databaseFactory = databaseFactoryFfiWeb;
   }
-  runApp(ChangeNotifierProvider(
-    create: (context) => ThemeProvider(),
-    child: const MyApp(),
-  ));
+
+  final prefs = await SharedPreferences.getInstance();
+  final isFirstTime = prefs.getBool('isFirstTime') ?? true;
+
+  final endTime = DateTime.now();
+  final duration = endTime.difference(startTime);
+  developer.log('Initialization complete in ${duration.inMilliseconds} ms');
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => CurrencyProvider()),
+      ],
+      child: MyApp(isFirstTime: isFirstTime),
+    ),
+  );
 }
 
 class ThemeProvider with ChangeNotifier {
@@ -43,28 +67,10 @@ class ThemeProvider with ChangeNotifier {
   }
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class MyApp extends StatelessWidget {
+  final bool isFirstTime;
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const TransactionHistoryScreen(),
-    const StatisticsScreen(),
-    const SettingsScreen(),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  const MyApp({super.key, required this.isFirstTime});
 
   @override
   Widget build(BuildContext context) {
@@ -144,50 +150,81 @@ class _MyAppState extends State<MyApp> {
           darkTheme: darkTheme,
           themeMode: themeProvider.themeMode,
           navigatorObservers: [routeObserver],
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: _screens[_selectedIndex],
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddTransactionScreen(),
-                    ),
-                  ).then((_) {
-                    // Potentially refresh other screens if needed upon return
-                  });
-                },
-                child: const Icon(Icons.add),
-              ),
-              floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-              bottomNavigationBar: BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                items: const <BottomNavigationBarItem>[
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home),
-                    label: 'Home',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.history),
-                    label: 'History',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.bar_chart),
-                    label: 'Stats',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.settings),
-                    label: 'Settings',
-                  ),
-                ],
-                currentIndex: _selectedIndex,
-                onTap: _onItemTapped,
-              ),
-            ),
-          ),
+          initialRoute: isFirstTime ? '/welcome' : '/main',
+          routes: {
+            '/welcome': (context) => const WelcomeScreen(),
+            '/main': (context) => const MainScreen(),
+          },
         );
       },
+    );
+  }
+}
+
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = [
+    const DashboardScreen(),
+    const TransactionHistoryScreen(),
+    const StatisticsScreen(),
+    const SettingsScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddTransactionScreen(),
+            ),
+          ).then((_) {
+            // Potentially refresh other screens if needed upon return
+          });
+        },
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Stats',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }

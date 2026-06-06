@@ -7,24 +7,25 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:myapp/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('Renders main screen smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    // Set isFirstTime to false to simulate a returning user
+    await tester.pumpWidget(const MyApp(isFirstTime: false));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the main screen is rendered
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Renders welcome screen smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame for a first-time user.
+    await tester.pumpWidget(const MyApp(isFirstTime: true));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the welcome screen is rendered
+    expect(find.text('Enter your name'), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsOneWidget);
   });
 }

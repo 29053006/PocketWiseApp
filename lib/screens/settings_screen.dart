@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/main.dart';
+import 'package:myapp/models/user_model.dart';
+import 'package:myapp/providers/currency_provider.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -11,9 +14,62 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  Future<User?>? _futureUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  void _loadUser() {
+    setState(() {
+      _futureUser = DatabaseHelper().getUser();
+    });
+  }
+
+  Future<void> _editName() async {
+    final user = await _futureUser;
+    if (user == null) return;
+
+    final nameController = TextEditingController(text: user.name);
+
+    if (!mounted) return;
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Name'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Enter your name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, nameController.text);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName != null && newName.isNotEmpty) {
+      final updatedUser = User(id: user.id, name: newName, avatar: user.avatar);
+      await DatabaseHelper().updateUser(updatedUser);
+      _loadUser();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -21,6 +77,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: ListView(
         children: [
+          _buildSectionHeader(context, 'Profile'),
+          FutureBuilder<User?>(
+            future: _futureUser,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasData && snapshot.data != null) {
+                final user = snapshot.data!;
+                final imageBytes = user.avatar != null ? base64Decode(user.avatar!) : null;
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 30,
+                    backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
+                    child: imageBytes == null ? const Icon(Icons.person) : null,
+                  ),
+                  title: Text(user.name, style: Theme.of(context).textTheme.titleLarge),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: _editName,
+                  ),
+                );
+              }
+              return const ListTile(
+                leading: CircleAvatar(
+                  radius: 30,
+                  child: Icon(Icons.person),
+                ),
+                title: Text('No user data'),
+              );
+            },
+          ),
+          const Divider(),
           _buildSectionHeader(context, 'Appearance'),
           SwitchListTile(
             title: const Text('Dark Mode'),
@@ -36,12 +125,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (value) {
                 themeProvider.setSystemTheme();
               } else {
-                // To toggle off system theme, we can default to light theme
                 if (themeProvider.themeMode == ThemeMode.system) {
                   themeProvider.toggleTheme();
                 }
               }
             },
+          ),
+           const Divider(),
+          _buildSectionHeader(context, 'Currency'),
+          ListTile(
+            title: const Text('Display Currency'),
+            trailing: DropdownButton<String>(
+              value: currencyProvider.currency,
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  currencyProvider.setCurrency(newValue);
+                }
+              },
+              items: <String>['USD', 'COP']
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
           ),
           const Divider(),
           _buildSectionHeader(context, 'Database'),
@@ -87,17 +195,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextButton(
               child: const Text('Delete'),
               onPressed: () async {
-                await DatabaseHelper().deleteAllTransactions();
-
                 if (!mounted) return;
+                final navigator = Navigator.of(dialogContext);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-                Navigator.of(dialogContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('All transactions have been deleted.'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                await DatabaseHelper().deleteAllTransactions();
+                
+                navigator.pop();
+
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('All transactions have been deleted.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               },
             ),
           ],

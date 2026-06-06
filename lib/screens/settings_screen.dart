@@ -171,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.secondary,
+              color: Theme.of(context).colorScheme.primary,
             ),
       ),
     );

@@ -69,6 +69,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = _selectedType == 'Expense' ? expenseCategories : incomeCategories;
+    final inputDecoration = InputDecoration(
+      filled: true,
+      fillColor: Theme.of(context).colorScheme.surfaceVariant,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -81,6 +89,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: ListView(
             children: <Widget>[
               SegmentedButton<String>(
+                style: SegmentedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                  selectedForegroundColor: Theme.of(context).colorScheme.onPrimary,
+                  selectedBackgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 segments: const <ButtonSegment<String>>[
                   ButtonSegment(value: 'Expense', label: Text('Expense'), icon: Icon(Icons.arrow_upward)),
                   ButtonSegment(value: 'Income', label: Text('Income'), icon: Icon(Icons.arrow_downward)),
@@ -107,12 +121,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     _selectedCategory = newValue!;
                   });
                 },
-                decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+                decoration: inputDecoration.copyWith(labelText: 'Category'),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+                decoration: inputDecoration.copyWith(labelText: 'Amount'),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -127,7 +141,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
+                decoration: inputDecoration.copyWith(labelText: 'Description'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a description';
@@ -140,6 +154,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 title: Text("Date: ${DateFormat.yMMMd().format(_selectedDate)}"),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () => _selectDate(context),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(

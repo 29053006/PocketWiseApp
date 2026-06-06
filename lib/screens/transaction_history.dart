@@ -154,7 +154,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                 child: Text(
                                   dateKey,
                                   style: TextStyle(
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -186,9 +186,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Search transactions...',
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant),
           filled: true,
-          fillColor: Colors.grey[200],
+          fillColor: Theme.of(context).colorScheme.surfaceVariant,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
             borderSide: BorderSide.none,
@@ -213,12 +213,12 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       _applyFilter();
                     });
                   },
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
                   selectedColor: Theme.of(context).colorScheme.primary,
                   labelStyle: TextStyle(
                       color: _selectedFilter == label
-                          ? Colors.white
-                          : Colors.black),
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurfaceVariant),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                     side: BorderSide.none,
@@ -232,7 +232,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Widget _buildTransactionItem(
       my_models.Transaction transaction, String currency) {
     final isIncome = transaction.type == 'Income';
-    final color = isIncome ? Colors.green : Colors.red;
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isIncome ? colorScheme.primary : colorScheme.error;
 
     return Slidable(
       key: ValueKey(transaction.id),
@@ -243,8 +244,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
             onPressed: (context) {
               _deleteTransaction(transaction.id!);
             },
-            backgroundColor: const Color(0xFFFE4A49),
-            foregroundColor: Colors.white,
+            backgroundColor: colorScheme.error,
+            foregroundColor: colorScheme.onError,
             icon: Icons.delete,
             label: 'Delete',
           ),
@@ -260,7 +261,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(transaction.category).withAlpha(26),
+                  color: _getCategoryColor(transaction.category).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: _getIconForCategory(transaction.category),
@@ -272,13 +273,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   children: [
                     Text(
                       transaction.description,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(fontWeight: FontWeight.w500, color: colorScheme.onSurface),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${transaction.category} • ${DateFormat.jm().format(transaction.date)}',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -319,19 +320,20 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Color _getCategoryColor(String category) {
+    final colorScheme = Theme.of(context).colorScheme;
     switch (category) {
       case 'Groceries':
-        return Colors.orange;
+        return colorScheme.secondary;
       case 'Salary':
-        return Colors.green;
+        return colorScheme.primary;
       case 'Dining':
-        return Colors.red;
+        return colorScheme.tertiary;
       case 'Transport':
-        return Colors.blue;
+        return colorScheme.primary.withOpacity(0.8);
       case 'Netflix':
-        return Colors.deepPurple;
+        return colorScheme.secondary.withOpacity(0.8);
       default:
-        return Colors.grey;
+        return colorScheme.onSurfaceVariant;
     }
   }
 }

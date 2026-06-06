@@ -57,19 +57,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         title: Row(
           children: [
-            // Image.asset(
-            //   'assets/images/logo.png',
-            //   height: 24,
-            // ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Image.asset(
+                'assets/images/logo.png',
+                key: const ValueKey('logo_image'),
+                height: 24,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.business_center, size: 24);
+                },
+              ),
+            ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'PocketWise',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -140,24 +148,25 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedFilter,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down),
+          icon: Icon(Icons.keyboard_arrow_down, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          dropdownColor: Theme.of(context).colorScheme.surfaceVariant,
           items: ['This Month', 'Last Month', 'This Year'].map((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 18, color: Colors.grey),
+                  Icon(Icons.calendar_today_outlined,
+                      size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 8),
-                  Text(value),
+                  Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                 ],
               ),
             );
@@ -181,7 +190,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -190,18 +198,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Expenses by Category',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Icon(Icons.info_outline, color: Colors.grey.shade400),
+                Text('Expenses by Category',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface)),
+                Icon(Icons.info_outline, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ),
             const SizedBox(height: 24),
             if (expenses.isEmpty)
               const SizedBox(
                   height: 200,
-                  child:
-                      Center(child: Text("No expense data for this period.")))
+                  child: Center(
+                      child: Text("No expense data for this period.")))
             else
               _buildPieChart(expenses, currency),
           ],
@@ -217,16 +227,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       categoryMap[t.category] = (categoryMap[t.category] ?? 0) + t.amount;
     }
 
-    final List<PieChartSectionData> sections = [];
+    final colorScheme = Theme.of(context).colorScheme;
     final List<Color> colors = [
-      const Color(0xFF023E8A),
-      const Color(0xFF0077B6),
-      const Color(0xFF0096C7),
-      const Color(0xFF48CAE4),
-      const Color(0xFFADE8F4),
+      colorScheme.primary,
+      colorScheme.secondary,
+      colorScheme.tertiary,
+      colorScheme.primary.withOpacity(0.7),
+      colorScheme.secondary.withOpacity(0.7),
     ];
     int colorIndex = 0;
 
+    final List<PieChartSectionData> sections = [];
     categoryMap.forEach((category, amount) {
       final percentage = totalExpense > 0 ? (amount / totalExpense) * 100 : 0.0;
       sections.add(
@@ -254,11 +265,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Total',
-                      style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  Text('Total',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                   Text(formatCurrency(totalExpense, currency),
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                 ],
               )
             ],
@@ -287,20 +298,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           children: [
             Container(width: 12, height: 12, color: color),
             const SizedBox(width: 12),
-            Text(entry.key, style: const TextStyle(fontSize: 14)),
+            Text(entry.key, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
             const Spacer(),
             SizedBox(
                 width: 90,
                 child: Text(
                   formatCurrency(entry.value, currency),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                   textAlign: TextAlign.right,
                 )),
             const SizedBox(width: 16),
             SizedBox(
                 width: 40,
                 child: Text('$percentage%',
-                    style: TextStyle(color: Colors.grey.shade600))),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
           ],
         ),
       );
@@ -315,13 +326,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final expenses = transactions.where((t) => t.type == 'Expense');
 
     for (final transaction in expenses) {
-      // This logic is for the current month.
-      // It needs to be more robust for the "Last Month" and "This Year" filters.
       if (transaction.date.year == now.year &&
           transaction.date.month == now.month) {
         final dayOfMonth = transaction.date.day;
-        // This is a simplified calculation for week of month.
-        // A more accurate library might be needed for complex cases.
         final weekOfMonth = (dayOfMonth / 7).ceil();
 
         if (weekOfMonth >= 1 && weekOfMonth <= 4) {
@@ -343,17 +350,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Weekly Spend',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Weekly Spend',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             Text(
                 'Average ${formatCurrency(averageWeeklySpend.toDouble(), currency)} / week',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
             const SizedBox(height: 24),
             SizedBox(
               height: 150,
@@ -408,7 +414,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           }
           return SideTitleWidget(
             child: Text(text,
-                style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
             meta: meta,
             space: 4,
           );
@@ -423,7 +429,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         barRods: [
           BarChartRodData(
             toY: weeklyData[week] ?? 0.0,
-            color: const Color(0xFF0077B6),
+            color: Theme.of(context).colorScheme.primary,
             width: 22,
             borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(6), topRight: Radius.circular(6)),
@@ -457,7 +463,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF004B44),
+        color: Theme.of(context).colorScheme.tertiaryContainer,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -465,26 +471,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.black.withAlpha(51), // 0.2 opacity
+              color: Theme.of(context).colorScheme.tertiary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.lightbulb_outline,
-                color: Colors.amber, size: 28),
+            child: Icon(Icons.lightbulb_outline,
+                color: Theme.of(context).colorScheme.onTertiaryContainer, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Smart Tip',
+                Text('Smart Tip',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onTertiaryContainer,
                         fontSize: 16,
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(
                   tip,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onTertiaryContainer.withOpacity(0.8), fontSize: 14),
                 ),
               ],
             ),

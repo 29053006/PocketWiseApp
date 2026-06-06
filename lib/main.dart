@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:myapp/providers/currency_provider.dart';
@@ -76,13 +75,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primarySeedColor = Color(0xFF0A7169); // Teal
+    const Color primarySeedColor = Color(0xFF3661F2); // Modern Blue
 
     final lightColorScheme = ColorScheme.fromSeed(
       seedColor: primarySeedColor,
       brightness: Brightness.light,
-      primary: primarySeedColor,
-      secondary: Colors.amber, // A bright accent
+    );
+
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: primarySeedColor,
+      brightness: Brightness.dark,
     );
 
     final ThemeData lightTheme = ThemeData(
@@ -99,7 +101,7 @@ class MyApp extends StatelessWidget {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
+          foregroundColor: lightColorScheme.onPrimary,
           backgroundColor: lightColorScheme.primary,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -110,28 +112,22 @@ class MyApp extends StatelessWidget {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         selectedItemColor: lightColorScheme.primary,
-        unselectedItemColor: Colors.grey[500],
+        unselectedItemColor: lightColorScheme.onSurfaceVariant,
         backgroundColor: lightColorScheme.surface,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         unselectedLabelStyle:
             const TextStyle(fontWeight: FontWeight.w500),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primarySeedColor,
-        foregroundColor: Colors.white,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: lightColorScheme.primary,
+        foregroundColor: lightColorScheme.onPrimary,
       ),
       cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
       ),
-    );
-
-    final darkColorScheme = ColorScheme.fromSeed(
-      seedColor: primarySeedColor,
-      brightness: Brightness.dark,
-      primary: primarySeedColor,
-      secondary: Colors.amber,
     );
 
     final ThemeData darkTheme = ThemeData(
@@ -148,7 +144,7 @@ class MyApp extends StatelessWidget {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
+          foregroundColor: darkColorScheme.onPrimary,
           backgroundColor: darkColorScheme.primary,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -158,21 +154,22 @@ class MyApp extends StatelessWidget {
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        selectedItemColor: darkColorScheme.secondary,
-        unselectedItemColor: Colors.grey[400],
+        selectedItemColor: darkColorScheme.primary,
+        unselectedItemColor: darkColorScheme.onSurfaceVariant,
         backgroundColor: darkColorScheme.surface,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         unselectedLabelStyle:
             const TextStyle(fontWeight: FontWeight.w500),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primarySeedColor,
-        foregroundColor: Colors.white,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: darkColorScheme.primary,
+        foregroundColor: darkColorScheme.onPrimary,
       ),
       cardTheme: CardThemeData(
-        elevation: 4,
+        elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
       ),
     );
 
@@ -233,7 +230,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _screens[_selectedIndex],
+      ),
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
@@ -258,7 +258,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     final isSelected = _selectedIndex == index;
-    final color = isSelected ? Theme.of(context).colorScheme.primary : Colors.grey;
+    final color = isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant;
     return InkWell(
       onTap: () => _onItemTapped(index),
       borderRadius: BorderRadius.circular(30),

@@ -4,6 +4,7 @@ import 'package:myapp/main.dart';
 import 'package:myapp/models/transaction_model.dart' as my_models;
 import 'package:myapp/providers/currency_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/screens/budget_screen.dart';
 import 'package:myapp/screens/transaction_history.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
@@ -49,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       }
     }
 
-    const double monthlyBudget = 2000.0; // Example budget
+    final double monthlyBudget = await dbHelper.getMonthlyBudget();
     final budgetUsedPercentage =
         (monthlyBudget > 0 ? monthlyExpenses / monthlyBudget : 0.0)
             .clamp(0.0, 1.0);
@@ -311,7 +312,12 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface)),
-                TextButton(onPressed: () {}, child: Text(lang.translate('view_plans'))),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const BudgetScreen()),
+                  ).then((_) => didPopNext()), 
+                  child: Text(lang.translate('manage_budget'))),
               ],
             ),
             const SizedBox(height: 10),

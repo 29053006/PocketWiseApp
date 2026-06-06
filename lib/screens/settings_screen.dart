@@ -6,6 +6,7 @@ import 'package:myapp/main.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/providers/currency_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
+import 'package:myapp/screens/budget_screen.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -111,6 +112,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(languageProvider.translate('no_user_data')),
               );
             },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_outlined),
+            title: Text(languageProvider.translate('manage_budget')),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BudgetScreen()),
+            ),
           ),
           const Divider(),
           _buildSectionHeader(context, languageProvider.translate('appearance')),

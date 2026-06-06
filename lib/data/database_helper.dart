@@ -32,7 +32,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'app.db');
     return await openDatabase(
       path,
-      version: 2, // Incremented version to trigger onUpgrade
+      version: 3, // Incremented version for budget table
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -56,12 +56,24 @@ class DatabaseHelper {
         avatar TEXT
       )
     ''');
+    await db.execute('''
+      CREATE TABLE budgets(
+        id INTEGER PRIMARY KEY,
+        amount REAL
+      )
+    ''');
+    // Insert default budget
+    await db.insert('budgets', {'id': 1, 'amount': 2000.0});
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE transactions ADD COLUMN type TEXT');
       await db.execute('ALTER TABLE transactions ADD COLUMN category TEXT');
+    }
+    if (oldVersion < 3) {
+      await db.execute('CREATE TABLE budgets(id INTEGER PRIMARY KEY, amount REAL)');
+      await db.insert('budgets', {'id': 1, 'amount': 2000.0});
     }
   }
 
@@ -128,5 +140,17 @@ class DatabaseHelper {
   Future<void> deleteAllTransactions() async {
     final db = await database;
     await db.delete('transactions');
+  }
+
+  Future<double> getMonthlyBudget() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('budgets', where: 'id = 1');
+    if (maps.isNotEmpty) return maps.first['amount'] as double;
+    return 2000.0;
+  }
+
+  Future<int> updateMonthlyBudget(double amount) async {
+    final db = await database;
+    return await db.update('budgets', {'amount': amount}, where: 'id = 1');
   }
 }

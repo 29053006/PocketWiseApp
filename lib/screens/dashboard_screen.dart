@@ -143,13 +143,13 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
-          colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withOpacity(0.8)],
+          colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withAlpha(204)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withAlpha(77),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),

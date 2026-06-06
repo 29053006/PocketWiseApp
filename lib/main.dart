@@ -117,7 +117,7 @@ class MyApp extends StatelessWidget {
         unselectedLabelStyle:
             const TextStyle(fontWeight: FontWeight.w500),
       ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primarySeedColor,
         foregroundColor: Colors.white,
       ),
@@ -166,7 +166,7 @@ class MyApp extends StatelessWidget {
         unselectedLabelStyle:
             const TextStyle(fontWeight: FontWeight.w500),
       ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primarySeedColor,
         foregroundColor: Colors.white,
       ),

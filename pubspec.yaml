@@ -20,6 +20,7 @@ dependencies:
   fl_chart: ^0.68.0
   sqflite_common_ffi: ^2.3.7+1
   sqflite_common_ffi_web: ^1.0.2
+  flutter_slidable: ^4.0.3
 
 dev_dependencies:
   flutter_test:

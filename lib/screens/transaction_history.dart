@@ -163,7 +163,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                               ...transactions.map((transaction) {
                                 return _buildTransactionItem(
                                     transaction, currency);
-                              }).toList(),
+                              }),
                             ],
                           ),
                         );
@@ -260,7 +260,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(transaction.category).withOpacity(0.1),
+                  color: _getCategoryColor(transaction.category).withAlpha(26),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: _getIconForCategory(transaction.category),

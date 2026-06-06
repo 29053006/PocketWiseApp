@@ -38,7 +38,7 @@ class DatabaseHelper {
     );
   }
 
-  Future _onCreate(Database db, int version) async {
+  Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE transactions(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,7 +58,7 @@ class DatabaseHelper {
     ''');
   }
 
-  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE transactions ADD COLUMN type TEXT');
       await db.execute('ALTER TABLE transactions ADD COLUMN category TEXT');
@@ -66,12 +66,12 @@ class DatabaseHelper {
   }
 
   Future<int> insertTransaction(my_models.Transaction transaction) async {
-    Database db = await database;
+    final db = await database;
     return await db.insert('transactions', transaction.toMap());
   }
 
   Future<int> deleteTransaction(int id) async {
-    Database db = await database;
+    final db = await database;
     return await db.delete(
       'transactions',
       where: 'id = ?',
@@ -80,7 +80,7 @@ class DatabaseHelper {
   }
 
   Future<List<my_models.Transaction>> getTransactions() async {
-    Database db = await database;
+    final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('transactions');
 
     return List.generate(maps.length, (i) {
@@ -96,12 +96,12 @@ class DatabaseHelper {
   }
 
   Future<int> insertUser(User user) async {
-    Database db = await database;
+    final db = await database;
     return await db.insert('user', user.toMap());
   }
 
   Future<User?> getUser() async {
-    Database db = await database;
+    final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('user');
 
     if (maps.isNotEmpty) {
@@ -116,7 +116,7 @@ class DatabaseHelper {
   }
 
   Future<int> updateUser(User user) async {
-    Database db = await database;
+    final db = await database;
     return await db.update(
       'user',
       user.toMap(),
@@ -126,7 +126,7 @@ class DatabaseHelper {
   }
 
   Future<void> deleteAllTransactions() async {
-    Database db = await database;
+    final db = await database;
     await db.delete('transactions');
   }
 }

@@ -108,21 +108,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close), 
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20), 
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Add Transaction', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
+        title: const Text('New Transaction'),
         backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Form(
           key: _formKey,
           child: ListView(
+            physics: const BouncingScrollPhysics(),
             children: <Widget>[
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               _buildAmountField(),
               const SizedBox(height: 30),
               _buildTransactionTypeSelector(),
@@ -158,9 +157,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '\$',
+              '\$', 
               style: TextStyle(
-                fontSize: 48,
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -193,71 +192,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildTransactionTypeSelector() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surfaceVariant,
-      borderRadius: BorderRadius.circular(30),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedType = 'Expense';
-                _selectedCategory = _expenseCategories.keys.first;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: _selectedType == 'Expense' ? Colors.redAccent : Colors.transparent,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Center(
-                child: Text(
-                  'Expense',
-                  style: TextStyle(
-                    color: _selectedType == 'Expense' ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedType = 'Income';
-                _selectedCategory = _incomeCategories.keys.first;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: _selectedType == 'Income' ? Colors.green : Colors.transparent,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Center(
-                child: Text(
-                  'Income',
-                  style: TextStyle(
-                    color: _selectedType == 'Income' ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-
+    return Center(
+      child: SegmentedButton<String>(
+        segments: const [
+          ButtonSegment(value: 'Expense', label: Text('Expense'), icon: Icon(Icons.outbound_outlined)),
+          ButtonSegment(value: 'Income', label: Text('Income'), icon: Icon(Icons.next_plan_outlined)),
+        ],
+        selected: {_selectedType},
+        onSelectionChanged: (Set<String> newSelection) {
+          setState(() {
+            _selectedType = newSelection.first;
+            _selectedCategory = _selectedType == 'Expense' 
+              ? _expenseCategories.keys.first 
+              : _incomeCategories.keys.first;
+          });
+        },
+      ),
+    );
+  }
   Widget _buildCategorySelector() {
     final categories = _selectedType == 'Expense' ? _expenseCategories : _incomeCategories;
     return Column(

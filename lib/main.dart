@@ -37,8 +37,8 @@ void main() async {
   final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
   final endTime = DateTime.now();
-  final duration = endTime.difference(startTime);
-  developer.log('Initialization complete in \${duration.inMilliseconds} ms');
+  final duration = endTime.difference(startTime); // Corrected syntax
+  developer.log('Initialization complete in ${duration.inMilliseconds} ms');
 
   runApp(
     MultiProvider(

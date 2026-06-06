@@ -7,6 +7,9 @@ import 'package:myapp/screens/transaction_history.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:myapp/models/user_model.dart';
+import 'package:image_picker/image_picker.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,12 +20,14 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   late Future<Map<String, dynamic>> _dashboardData;
+  Future<User?>? _futureUser;
   final dbHelper = DatabaseHelper();
 
   @override
   void initState() {
     super.initState();
     _dashboardData = _getDashboardData();
+    _futureUser = dbHelper.getUser();
   }
 
   Future<Map<String, dynamic>> _getDashboardData() async {
@@ -65,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     super.didChangeDependencies();
     final modalRoute = ModalRoute.of(context);
     if (modalRoute != null) {
-      routeObserver.subscribe(this, modalRoute as PageRoute);
+      routeObserver.subscribe(this, modalRoute);
     }
   }
 
@@ -80,12 +85,43 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     // Refresh data when returning to this screen
     setState(() {
       _dashboardData = _getDashboardData();
+      _futureUser = dbHelper.getUser();
     });
+  }
+
+  Future<void> _pickProfileImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 75,
+    );
+
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      final String base64Image = base64Encode(bytes);
+
+      final currentUser = await dbHelper.getUser();
+      if (currentUser != null) {
+        final updatedUser = User(
+          id: currentUser.id,
+          name: currentUser.name,
+          avatar: base64Image,
+        );
+        await dbHelper.updateUser(updatedUser);
+        
+        setState(() {
+          _futureUser = dbHelper.getUser();
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final currencyProvider = Provider.of<CurrencyProvider>(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -102,12 +138,23 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
             icon: const Icon(Icons.notifications_none_outlined),
             onPressed: () {},
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 16.0, left: 8.0),
-            child: CircleAvatar(
-              backgroundImage:
-                  NetworkImage('https://i.pravatar.cc/150?img=3'),
-            ),
+          FutureBuilder<User?>(
+            future: _futureUser,
+            builder: (context, snapshot) {
+              final user = snapshot.data;
+              final imageBytes = (user?.avatar != null) ? base64Decode(user!.avatar!) : null;
+              return GestureDetector(
+                onTap: _pickProfileImage,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0, left: 8.0),
+                  child: CircleAvatar(
+                    backgroundColor: colorScheme.primaryContainer,
+                    backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
+                    child: imageBytes == null ? Icon(Icons.person, color: colorScheme.primary) : null,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -157,14 +204,14 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
         gradient: LinearGradient(
           colors: [
             Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withAlpha(204)
+            Theme.of(context).colorScheme.secondary,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withAlpha(77),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -178,8 +225,8 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
           const SizedBox(height: 8),
           Text(
             formatCurrency(balance, currency),
-            style: const TextStyle(
-                color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: -1),
           ),
         ],
       ),
@@ -205,31 +252,32 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
 
   Widget _buildIncomeExpenseCard(BuildContext context, String title,
       double amount, String currency, IconData icon, Color iconColor) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: iconColor, size: 20),
-                const SizedBox(width: 8),
-                Text(title,
-                    style: TextStyle(
-                        fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(formatCurrency(amount, currency),
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              const SizedBox(width: 8),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(formatCurrency(amount, currency),
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface)),
+        ],
       ),
     );
   }

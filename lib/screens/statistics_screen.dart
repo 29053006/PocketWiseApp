@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/models/transaction_model.dart' as my_models;
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:myapp/providers/currency_provider.dart';
 import 'package:myapp/util/currency_util.dart';
@@ -63,13 +64,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Image.asset(
-                'assets/images/logo.png',
+              child: SvgPicture.asset(
+                'assets/images/logo.svg',
                 key: const ValueKey('logo_image'),
                 height: 24,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.business_center, size: 24);
-                },
+                placeholderBuilder: (context) => const Icon(Icons.business_center, size: 24),
               ),
             ),
             const SizedBox(width: 8),
@@ -261,12 +260,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             alignment: Alignment.center,
             children: [
               PieChart(PieChartData(
-                  sections: sections, centerSpaceRadius: 70, sectionsSpace: 2)),
+                  sections: sections, centerSpaceRadius: 60, sectionsSpace: 4)),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Total',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
+                  Text('EXPENSES',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, letterSpacing: 1.2)),
                   Text(formatCurrency(totalExpense, currency),
                       style: TextStyle(
                           fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),

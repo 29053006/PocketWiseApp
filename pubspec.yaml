@@ -20,7 +20,9 @@ dependencies:
   fl_chart: ^1.2.0
   sqflite_common_ffi: ^2.3.7+1
   sqflite_common_ffi_web: ^1.0.2
+  flutter_svg: ^2.0.10+1
   flutter_slidable: ^4.0.3
+  image_picker: ^1.1.2
   flutter_colorpicker: ^1.1.0
   collection: any
 dev_dependencies:

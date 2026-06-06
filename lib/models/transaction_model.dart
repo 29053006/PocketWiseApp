@@ -1,10 +1,10 @@
 class Transaction {
-  int? id;
-  String type;
-  double amount;
-  String category;
-  DateTime date;
-  String description;
+  final int? id;
+  final String type;
+  final double amount;
+  final String category;
+  final DateTime date;
+  final String description;
 
   Transaction({
     this.id,
@@ -15,7 +15,24 @@ class Transaction {
     required this.description,
   });
 
-  // Convert a Transaction object into a Map object
+  Transaction copyWith({
+    int? id,
+    String? type,
+    double? amount,
+    String? category,
+    DateTime? date,
+    String? description,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      amount: amount ?? this.amount,
+      category: category ?? this.category,
+      date: date ?? this.date,
+      description: description ?? this.description,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -27,7 +44,6 @@ class Transaction {
     };
   }
 
-  // Convert a Map object into a Transaction object
   factory Transaction.fromMap(Map<String, dynamic> map) {
     return Transaction(
       id: map['id'],

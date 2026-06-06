@@ -57,23 +57,46 @@ void main() async {
 class ThemeProvider with ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   Color _color = const Color(0xFF3661F2);
+  static const String _themeKey = 'theme_mode';
+  static const String _colorKey = 'theme_color';
 
   ThemeMode get themeMode => _themeMode;
   Color get color => _color;
 
-  void toggleTheme() {
+  ThemeProvider() {
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeIndex = prefs.getInt(_themeKey) ?? ThemeMode.system.index;
+    _themeMode = ThemeMode.values[themeIndex];
+    
+    final colorValue = prefs.getInt(_colorKey) ?? const Color(0xFF3661F2).value;
+    _color = Color(colorValue);
+    
+    notifyListeners();
+  }
+
+  Future<void> toggleTheme() async {
     _themeMode =
         _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_themeKey, _themeMode.index);
     notifyListeners();
   }
 
-  void setSystemTheme() {
+  Future<void> setSystemTheme() async {
     _themeMode = ThemeMode.system;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_themeKey, _themeMode.index);
     notifyListeners();
   }
 
-  void setColor(Color color) {
+  Future<void> setColor(Color color) async {
     _color = color;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_colorKey, color.value);
     notifyListeners();
   }
 }
@@ -87,104 +110,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    final lightColorScheme = ColorScheme.fromSeed(
-      seedColor: themeProvider.color,
-      brightness: Brightness.light,
-    );
-
-    final darkColorScheme = ColorScheme.fromSeed(
-      seedColor: themeProvider.color,
-      brightness: Brightness.dark,
-    );
-
-    final ThemeData lightTheme = ThemeData(
-      useMaterial3: true,
-      colorScheme: lightColorScheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: lightColorScheme.surface,
-        elevation: 0,
-        titleTextStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: lightColorScheme.onSurface),
-        iconTheme: IconThemeData(color: lightColorScheme.onSurface),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: lightColorScheme.onPrimary,
-          backgroundColor: lightColorScheme.primary,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-          textStyle:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        selectedItemColor: lightColorScheme.primary,
-        unselectedItemColor: lightColorScheme.onSurfaceVariant,
-        backgroundColor: lightColorScheme.surface,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        unselectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: lightColorScheme.primary,
-        foregroundColor: lightColorScheme.onPrimary,
-      ),
-      cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        clipBehavior: Clip.antiAlias,
-      ),
-    );
-
-    final ThemeData darkTheme = ThemeData(
-      useMaterial3: true,
-      colorScheme: darkColorScheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: darkColorScheme.surface,
-        elevation: 0,
-        titleTextStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: darkColorScheme.onSurface),
-        iconTheme: IconThemeData(color: darkColorScheme.onSurface),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: darkColorScheme.onPrimary,
-          backgroundColor: darkColorScheme.primary,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-          textStyle:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        selectedItemColor: darkColorScheme.primary,
-        unselectedItemColor: darkColorScheme.onSurfaceVariant,
-        backgroundColor: darkColorScheme.surface,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        unselectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: darkColorScheme.primary,
-        foregroundColor: darkColorScheme.onPrimary,
-      ),
-      cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        clipBehavior: Clip.antiAlias,
-      ),
-    );
-
     return Consumer2<ThemeProvider, LanguageProvider>(
       builder: (context, themeProvider, languageProvider, child) {
+        final lightTheme = _buildTheme(themeProvider.color, Brightness.light);
+        final darkTheme = _buildTheme(themeProvider.color, Brightness.dark);
+
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'PocketWise',
@@ -209,6 +139,40 @@ class MyApp extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  ThemeData _buildTheme(Color seedColor, Brightness brightness) {
+    final colorScheme = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness);
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: colorScheme.onPrimary,
+          backgroundColor: colorScheme.primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurfaceVariant,
+        backgroundColor: colorScheme.surface,
+        type: BottomNavigationBarType.fixed,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+      ),
     );
   }
 }

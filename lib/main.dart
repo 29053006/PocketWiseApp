@@ -285,16 +285,14 @@ class _MainScreenState extends State<MainScreen> {
       onTap: () => _onItemTapped(index),
       borderRadius: BorderRadius.circular(30),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color),
-              const SizedBox(height: 4),
-              Text(label, style: TextStyle(color: color, fontSize: 12)),
-            ],
-          ),
+        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(color: color, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
         ),
       ),
     );

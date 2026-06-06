@@ -38,7 +38,7 @@ void main() async {
 
   final endTime = DateTime.now();
   final duration = endTime.difference(startTime);
-  developer.log('Initialization complete in ${duration.inMilliseconds} ms');
+  developer.log('Initialization complete in \${duration.inMilliseconds} ms');
 
   runApp(
     MultiProvider(
@@ -53,8 +53,10 @@ void main() async {
 
 class ThemeProvider with ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
+  Color _color = const Color(0xFF3661F2);
 
   ThemeMode get themeMode => _themeMode;
+  Color get color => _color;
 
   void toggleTheme() {
     _themeMode =
@@ -66,6 +68,11 @@ class ThemeProvider with ChangeNotifier {
     _themeMode = ThemeMode.system;
     notifyListeners();
   }
+
+  void setColor(Color color) {
+    _color = color;
+    notifyListeners();
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -75,15 +82,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primarySeedColor = Color(0xFF3661F2); // Modern Blue
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     final lightColorScheme = ColorScheme.fromSeed(
-      seedColor: primarySeedColor,
+      seedColor: themeProvider.color,
       brightness: Brightness.light,
     );
 
     final darkColorScheme = ColorScheme.fromSeed(
-      seedColor: primarySeedColor,
+      seedColor: themeProvider.color,
       brightness: Brightness.dark,
     );
 
@@ -213,7 +220,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void _onItemTapped(int index) {
     if (index == 2) {
-      // The "Add" button in the center
+      // The \"Add\" button in the center
       Navigator.push(
         context,
         MaterialPageRoute(

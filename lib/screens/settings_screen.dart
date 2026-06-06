@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/main.dart';
 import 'package:myapp/models/user_model.dart';
@@ -131,7 +132,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
           ),
-           const Divider(),
+          ListTile(
+            title: const Text('App Color'),
+            trailing: CircleAvatar(
+              backgroundColor: themeProvider.color,
+              radius: 15,
+            ),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Pick a color'),
+                  content: SingleChildScrollView(
+                    child: ColorPicker(
+                      pickerColor: themeProvider.color,
+                      onColorChanged: (color) {
+                        themeProvider.setColor(color);
+                      },
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Done'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const Divider(),
           _buildSectionHeader(context, 'Currency'),
           ListTile(
             title: const Text('Display Currency'),

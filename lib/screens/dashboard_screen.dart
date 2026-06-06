@@ -1,47 +1,13 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/main.dart';
 import 'package:myapp/models/transaction_model.dart' as my_models;
 import 'package:myapp/providers/currency_provider.dart';
+import 'package:myapp/screens/transaction_history.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
-import 'dart:developer' as developer;
-
-// Data model for the dashboard
-class DashboardData {
-  final double totalIncome;
-  final double totalExpense;
-  final double balance;
-  final List<my_models.Transaction> recentTransactions;
-
-  DashboardData({
-    required this.totalIncome,
-    required this.totalExpense,
-    required this.balance,
-    required this.recentTransactions,
-  });
-}
-
-// Top-level function to perform calculations. This can be run in a separate isolate.
-DashboardData _calculateDashboardData(List<my_models.Transaction> transactions) {
-  developer.log('Starting calculation in isolate...');
-  final double totalIncome = transactions.where((t) => t.type == 'Income').fold(0, (sum, t) => sum + t.amount);
-  final double totalExpense = transactions.where((t) => t.type == 'Expense').fold(0, (sum, t) => sum + t.amount);
-  final double balance = totalIncome - totalExpense;
-
-  // Sort transactions to get the most recent ones
-  transactions.sort((a, b) => b.date.compareTo(a.date));
-  final recent = transactions.take(5).toList();
-
-  developer.log('Calculation in isolate finished.');
-  return DashboardData(
-    totalIncome: totalIncome,
-    totalExpense: totalExpense,
-    balance: balance,
-    recentTransactions: recent,
-  );
-}
+import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -51,167 +17,231 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
-  late Future<DashboardData> _dashboardData;
-  CurrencyProvider? _currencyProvider;
+  late Future<Map<String, dynamic>> _dashboardData;
+  final dbHelper = DatabaseHelper();
 
   @override
   void initState() {
     super.initState();
-    _dashboardData = _loadDashboardData();
+    _dashboardData = _getDashboardData();
   }
 
-  Future<DashboardData> _loadDashboardData() async {
-    final transactions = await DatabaseHelper().getTransactions();
-    // Use compute to run calculations in a separate isolate to prevent UI freezing.
-    return compute(_calculateDashboardData, transactions);
+  Future<Map<String, dynamic>> _getDashboardData() async {
+    final transactions = await dbHelper.getTransactions();
+    double totalIncome = 0;
+    double totalExpenses = 0;
+    double monthlyExpenses = 0;
+    final now = DateTime.now();
+
+    for (var t in transactions) {
+      if (t.type == 'Income') {
+        totalIncome += t.amount;
+      } else {
+        totalExpenses += t.amount;
+        if (t.date.month == now.month && t.date.year == now.year) {
+          monthlyExpenses += t.amount;
+        }
+      }
+    }
+    
+    const double monthlyBudget = 2000.0; // Example budget
+    final budgetUsedPercentage = (monthlyBudget > 0 ? monthlyExpenses / monthlyBudget : 0.0).clamp(0.0, 1.0);
+
+    transactions.sort((a, b) => b.date.compareTo(a.date));
+    return {
+      'totalBalance': totalIncome - totalExpenses,
+      'totalIncome': totalIncome,
+      'totalExpenses': totalExpenses,
+      'recentTransactions': transactions.take(5).toList(),
+      'monthlyBudget': monthlyBudget,
+      'monthlyExpenses': monthlyExpenses,
+      'budgetUsedPercentage': budgetUsedPercentage,
+    };
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)!);
-    // Refresh the dashboard when the currency changes
-    final newCurrencyProvider = Provider.of<CurrencyProvider>(context);
-    if (newCurrencyProvider != _currencyProvider) {
-      _currencyProvider?.removeListener(_refreshDashboard);
-      _currencyProvider = newCurrencyProvider;
-      _currencyProvider?.addListener(_refreshDashboard);
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute != null) {
+      routeObserver.subscribe(this, modalRoute as PageRoute);
     }
   }
 
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
-    _currencyProvider?.removeListener(_refreshDashboard);
     super.dispose();
   }
 
   @override
   void didPopNext() {
-    _refreshDashboard();
-  }
-
-  void _refreshDashboard() {
-    if (mounted) {
-      setState(() {
-        _dashboardData = _loadDashboardData();
-      });
-    }
-  }
-
-  String _getLocalizedCategory(BuildContext context, String category) {
-    return category;
+    // Refresh data when returning to this screen
+    setState(() {
+      _dashboardData = _getDashboardData();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final currencyProvider = Provider.of<CurrencyProvider>(context);
-    final currency = currencyProvider.currency;
 
     return Scaffold(
+      backgroundColor: Colors.grey[50], // Lighter background color
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        backgroundColor: Colors.grey[50], // Match background
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(Icons.account_balance_wallet_rounded, color: Theme.of(context).colorScheme.primary, size: 30),
+        ),
+        title: const Text('PocketWise', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_outlined),
+            onPressed: () {},
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 16.0, left: 8.0),
+            child: CircleAvatar(
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=3'), // Placeholder avatar
+            ),
+          ),
+        ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          _refreshDashboard();
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _dashboardData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData) {
+            return const Center(child: Text('No data available'));
+          } else {
+            final data = snapshot.data!;
+            return ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                _buildBalanceCard(context, data['totalBalance'], currencyProvider.currency),
+                const SizedBox(height: 20),
+                _buildIncomeExpenseRow(context, data['totalIncome'], data['totalExpenses'], currencyProvider.currency),
+                const SizedBox(height: 20),
+                _buildBudgetHealthCard(context, data['monthlyExpenses'], data['monthlyBudget'], data['budgetUsedPercentage'], currencyProvider.currency),
+                const SizedBox(height: 30),
+                _buildRecentTransactions(context, data['recentTransactions'], currencyProvider.currency),
+              ],
+            );
+          }
         },
-        child: FutureBuilder<DashboardData>(
-          future: _dashboardData,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.recentTransactions.isEmpty) {
-              // Use a lightweight placeholder instead of a GIF
-              return const Center(
-                  child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.receipt_long, size: 80, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No transactions yet.', style: TextStyle(fontSize: 18, color: Colors.grey)),
-                  Text('Add a new transaction to get started.', style: TextStyle(color: Colors.grey)),
-                ],
-              ));
-            } else {
-              final data = snapshot.data!;
-              final convertedBalance = convertCurrency(data.balance, currency);
-              final convertedIncome = convertCurrency(data.totalIncome, currency);
-              final convertedExpense = convertCurrency(data.totalExpense, currency);
+      ),
+    );
+  }
 
-              return Column(
-                children: [
-                  _buildSummaryCard(context, convertedBalance, convertedIncome, convertedExpense, currency),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Recent Transactions',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: data.recentTransactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = data.recentTransactions[index];
-                        final convertedAmount = convertCurrency(transaction.amount, currency);
-                        final isIncome = transaction.type == 'Income';
-                        final color = isIncome ? Colors.green : Colors.red;
+  Widget _buildBalanceCard(BuildContext context, double balance, String currency) {
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Total Balance', style: TextStyle(color: Colors.white70, fontSize: 16)),
+          const SizedBox(height: 8),
+          Text(
+            formatCurrency(balance, currency),
+            style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
 
-                        return ListTile(
-                          leading: Icon(
-                            isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-                            color: color,
-                          ),
-                          title: Text(transaction.description, style: Theme.of(context).textTheme.bodyMedium),
-                          subtitle: Text(_getLocalizedCategory(context, transaction.category), style: Theme.of(context).textTheme.bodySmall),
-                          trailing: Text(
-                            formatCurrency(convertedAmount, currency),
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              );
-            }
-          },
+  Widget _buildIncomeExpenseRow(BuildContext context, double income, double expenses, String currency) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildIncomeExpenseCard(context, 'Income', income, currency, Icons.arrow_downward_rounded, Colors.green),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildIncomeExpenseCard(context, 'Expenses', expenses, currency, Icons.arrow_upward_rounded, Colors.red),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIncomeExpenseCard(BuildContext context, String title, double amount, String currency, IconData icon, Color iconColor) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: iconColor, size: 20),
+                const SizedBox(width: 8),
+                Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(formatCurrency(amount, currency), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSummaryCard(
-      BuildContext context, double balance, double totalIncome, double totalExpense, String currency) {
+  Widget _buildBudgetHealthCard(BuildContext context, double monthlyExpenses, double monthlyBudget, double budgetUsedPercentage, String currency) {
     return Card(
-      margin: const EdgeInsets.all(16.0),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Current Balance',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              formatCurrency(balance, currency),
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-            ),
-            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildIncomeExpense(context, 'Income', totalIncome, Colors.green, currency),
-                _buildIncomeExpense(context, 'Expense', totalExpense, Colors.red, currency),
+                const Text('Budget Health', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                TextButton(onPressed: () {}, child: const Text('View Plans')),
               ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Expanded(flex: 3, child: Text('Monthly Spending', style: TextStyle(fontSize: 14, color: Colors.grey))),
+                Expanded(flex: 2, child: Text('${(budgetUsedPercentage * 100).toStringAsFixed(0)}% used', textAlign: TextAlign.end, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: budgetUsedPercentage,
+              backgroundColor: Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+              minHeight: 6,
+              borderRadius: BorderRadius.circular(3),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${formatCurrency(monthlyExpenses, currency)} of ${formatCurrency(monthlyBudget, currency)}',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
@@ -219,19 +249,73 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     );
   }
 
-  Widget _buildIncomeExpense(BuildContext context, String title, double amount, Color color, String currency) {
+  Widget _buildRecentTransactions(BuildContext context, List<my_models.Transaction> transactions, String currency) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Recent Transactions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TransactionHistoryScreen()),
+                );
+              },
+              child: const Text('See All'),
+            ),
+          ],
         ),
-        Text(
-          formatCurrency(amount, currency),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: color),
+        const SizedBox(height: 10),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: transactions.length,
+          itemBuilder: (context, index) {
+            final transaction = transactions[index];
+            final isIncome = transaction.type == 'Income';
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: _getIconForCategory(transaction.category),
+                ),
+                title: Text(transaction.description, style: const TextStyle(fontWeight: FontWeight.w500)),
+                subtitle: Text(DateFormat.yMMMd().format(transaction.date), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                trailing: Text(
+                  '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount, currency)}',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? Colors.green : Colors.red, fontSize: 16),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
+  }
+
+  Icon _getIconForCategory(String category) {
+    switch (category) {
+      case 'Groceries':
+        return const Icon(Icons.shopping_bag_outlined, color: Colors.orange);
+      case 'Salary':
+        return const Icon(Icons.account_balance_wallet_outlined, color: Colors.green);
+      case 'Dining':
+        return const Icon(Icons.local_cafe_outlined, color: Colors.red);
+      case 'Transport':
+        return const Icon(Icons.directions_bus_outlined, color: Colors.blue);
+      case 'Netflix':
+        return const Icon(Icons.live_tv_outlined, color: Colors.deepPurple);
+      default:
+        return const Icon(Icons.category_outlined, color: Colors.grey);
+    }
   }
 }

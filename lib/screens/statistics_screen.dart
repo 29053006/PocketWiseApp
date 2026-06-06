@@ -4,6 +4,7 @@ import 'package:myapp/models/transaction_model.dart' as my_models;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:myapp/providers/currency_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
@@ -56,6 +57,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -108,10 +111,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No transactions yet.'));
+              return Center(child: Text(lang.translate('no_transactions')));
             } else {
               final filteredTransactions = _filterTransactions(snapshot.data!);
-              return _buildStatisticsBody(filteredTransactions, snapshot.data!);
+              return _buildStatisticsBody(filteredTransactions, snapshot.data!, lang);
             }
           },
         ),
@@ -120,11 +123,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildStatisticsBody(List<my_models.Transaction> filteredTransactions,
-      List<my_models.Transaction> allTransactions) {
+      List<my_models.Transaction> allTransactions, LanguageProvider lang) {
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        _buildTimeFilter(),
+        _buildTimeFilter(lang),
         const SizedBox(height: 24),
         if (filteredTransactions.isEmpty)
           const Center(
@@ -133,17 +136,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: Text("No transaction data for this period."),
           ))
         else ...[
-          _buildExpensesByCategoryCard(filteredTransactions),
+          _buildExpensesByCategoryCard(filteredTransactions, lang),
           const SizedBox(height: 24),
-          _buildWeeklySpendCard(filteredTransactions),
+          _buildWeeklySpendCard(filteredTransactions, lang),
           const SizedBox(height: 24),
-          _buildSmartTipCard(allTransactions),
+          _buildSmartTipCard(allTransactions, lang),
         ]
       ],
     );
   }
 
-  Widget _buildTimeFilter() {
+  Widget _buildTimeFilter(LanguageProvider lang) {
+    final filterLabels = {
+      'This Month': lang.translate('this_month'),
+      'Last Month': lang.translate('last_month'),
+      'This Year': lang.translate('this_year'),
+    };
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -165,7 +174,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   Icon(Icons.calendar_today_outlined,
                       size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 8),
-                  Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  Text(filterLabels[value]!, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                 ],
               ),
             );
@@ -183,7 +192,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildExpensesByCategoryCard(
-      List<my_models.Transaction> transactions) {
+      List<my_models.Transaction> transactions, LanguageProvider lang) {
     final currency = Provider.of<CurrencyProvider>(context).currency;
     final expenses = transactions.where((t) => t.type == 'Expense').toList();
 
@@ -197,7 +206,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Expenses by Category',
+                Text(lang.translate('expenses_by_category'),
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -212,14 +221,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   child: Center(
                       child: Text("No expense data for this period.")))
             else
-              _buildPieChart(expenses, currency),
+              _buildPieChart(expenses, currency, lang),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPieChart(List<my_models.Transaction> expenses, String currency) {
+  Widget _buildPieChart(List<my_models.Transaction> expenses, String currency, LanguageProvider lang) {
     final totalExpense = expenses.fold(0.0, (sum, t) => sum + t.amount);
     final Map<String, double> categoryMap = {};
     for (var t in expenses) {
@@ -264,7 +273,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('EXPENSES',
+                  Text(lang.translate('expenses').toUpperCase(),
                       style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, letterSpacing: 1.2)),
                   Text(formatCurrency(totalExpense, currency),
                       style: TextStyle(
@@ -275,13 +284,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        ..._buildLegend(categoryMap, totalExpense, colors, currency),
+        ..._buildLegend(categoryMap, totalExpense, colors, currency, lang),
       ],
     );
   }
 
   List<Widget> _buildLegend(Map<String, double> categoryMap,
-      double totalExpense, List<Color> colors, String currency) {
+      double totalExpense, List<Color> colors, String currency, LanguageProvider lang) {
     int colorIndex = 0;
     final sortedEntries = categoryMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -297,7 +306,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           children: [
             Container(width: 12, height: 12, color: color),
             const SizedBox(width: 12),
-            Text(entry.key, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+            Text(lang.translate(entry.key.toLowerCase()), style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
             const Spacer(),
             SizedBox(
                 width: 90,
@@ -339,7 +348,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return weeklySpending;
   }
 
-  Widget _buildWeeklySpendCard(List<my_models.Transaction> transactions) {
+  Widget _buildWeeklySpendCard(List<my_models.Transaction> transactions, LanguageProvider lang) {
     final weeklyData = _calculateWeeklySpending(transactions);
     final totalWeeklySpend = weeklyData.values.fold(0.0, (a, b) => a + b);
     final averageWeeklySpend = weeklyData.values.where((v) => v > 0).isEmpty
@@ -354,10 +363,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Weekly Spend',
+            Text(lang.translate('weekly_spend'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             Text(
-                'Average ${formatCurrency(averageWeeklySpend.toDouble(), currency)} / week',
+                '${lang.translate('average')} ${formatCurrency(averageWeeklySpend.toDouble(), currency)} / ${lang.translate('week')}',
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
             const SizedBox(height: 24),
             SizedBox(
@@ -438,7 +447,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     });
   }
 
-  Widget _buildSmartTipCard(List<my_models.Transaction> allTransactions) {
+  Widget _buildSmartTipCard(List<my_models.Transaction> allTransactions, LanguageProvider lang) {
     final expenses = allTransactions.where((t) => t.type == 'Expense').toList();
     if (expenses.isEmpty) {
       return const SizedBox.shrink();
@@ -452,12 +461,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final sortedCategories = categoryMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final highestCategory = sortedCategories.first.key;
+    final highestCategory = lang.translate(sortedCategories.first.key.toLowerCase());
     final highestAmount = sortedCategories.first.value;
     final currency = Provider.of<CurrencyProvider>(context).currency;
 
-    final tip =
-        "You've spent the most on $highestCategory (${formatCurrency(highestAmount, currency)}). Consider looking for ways to reduce this expense.";
+    final tip = 
+        "${lang.translate('smart_tip_msg')}$highestCategory (${formatCurrency(highestAmount, currency)})${lang.translate('smart_tip_msg_end')}";
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -481,7 +490,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Smart Tip',
+                Text(lang.translate('smart_tip_title'),
                     style: TextStyle(
                         color: Theme.of(context).colorScheme.onTertiaryContainer,
                         fontSize: 16,

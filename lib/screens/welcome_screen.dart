@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:myapp/main.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/database_helper.dart';
@@ -45,6 +46,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       body: Container(
@@ -69,15 +71,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
-                  _buildHeader(colorScheme),
+                  _buildHeader(colorScheme, lang),
                   const SizedBox(height: 60),
-                  _buildInputSection(colorScheme),
+                  _buildInputSection(colorScheme, lang),
                   const SizedBox(height: 40),
-                  _buildContinueButton(themeProvider.color, colorScheme),
+                  _buildContinueButton(themeProvider.color, colorScheme, lang),
                   const SizedBox(height: 20),
                   Center(
                     child: Text(
-                      'Your data is stored locally and securely.',
+                      lang.translate('data_local_secure'),
                       style: TextStyle(
                         color: colorScheme.onSurfaceVariant.withOpacity(0.6),
                         fontSize: 12,
@@ -93,7 +95,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme) {
+  Widget _buildHeader(ColorScheme colorScheme, LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -111,7 +113,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
         const SizedBox(height: 32),
         Text(
-          'Welcome to\nPocketWise',
+          lang.translate('welcome_title'),
           style: TextStyle(
             fontSize: 40,
             fontWeight: FontWeight.bold,
@@ -121,7 +123,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Smart tracking for a better\nfinancial future.',
+          lang.translate('smart_tracking_sub'),
           style: TextStyle(
             fontSize: 18,
             color: colorScheme.onSurfaceVariant,
@@ -132,12 +134,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildInputSection(ColorScheme colorScheme) {
+  Widget _buildInputSection(ColorScheme colorScheme, LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "WHAT'S YOUR NAME?",
+          lang.translate('whats_your_name'),
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
@@ -150,7 +152,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           controller: _nameController,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
-            hintText: 'e.g. Alex Smith',
+            hintText: lang.translate('name_hint'),
             filled: true,
             fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
             prefixIcon: const Icon(Icons.person_outline),
@@ -166,7 +168,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Please let us know how to call you';
+              return lang.translate('name_error');
             }
             return null;
           },
@@ -175,7 +177,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildContinueButton(Color buttonColor, ColorScheme colorScheme) {
+  Widget _buildContinueButton(Color buttonColor, ColorScheme colorScheme, LanguageProvider lang) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -203,9 +205,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     key: const ValueKey('button_content'),
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Get Started',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      Text(
+                        lang.translate('get_started'),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),
                       const Icon(Icons.arrow_forward_rounded),

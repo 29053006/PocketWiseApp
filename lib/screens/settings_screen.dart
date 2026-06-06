@@ -5,6 +5,7 @@ import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/main.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/providers/currency_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -29,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  Future<void> _editName() async {
+  Future<void> _editName(LanguageProvider lang) async {
     final user = await _futureUser;
     if (user == null) return;
 
@@ -39,22 +40,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Name'),
+        title: Text(lang.translate('edit_name')),
         content: TextField(
           controller: nameController,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Enter your name'),
+          decoration: InputDecoration(hintText: lang.translate('edit_name_hint')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(lang.translate('cancel')),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context, nameController.text);
             },
-            child: const Text('Save'),
+            child: Text(lang.translate('save')),
           ),
         ],
       ),
@@ -71,14 +72,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final currencyProvider = Provider.of<CurrencyProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(languageProvider.translate('settings')),
       ),
       body: ListView(
         children: [
-          _buildSectionHeader(context, 'Profile'),
+          _buildSectionHeader(context, languageProvider.translate('profile')),
           FutureBuilder<User?>(
             future: _futureUser,
             builder: (context, snapshot) {
@@ -97,30 +99,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(user.name, style: Theme.of(context).textTheme.titleLarge),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: _editName,
+                    onPressed: () => _editName(languageProvider),
                   ),
                 );
               }
-              return const ListTile(
+              return ListTile(
                 leading: CircleAvatar(
                   radius: 30,
                   child: Icon(Icons.person),
                 ),
-                title: Text('No user data'),
+                title: Text(languageProvider.translate('no_user_data')),
               );
             },
           ),
           const Divider(),
-          _buildSectionHeader(context, 'Appearance'),
+          _buildSectionHeader(context, languageProvider.translate('appearance')),
           SwitchListTile(
-            title: const Text('Dark Mode'),
+            title: Text(languageProvider.translate('dark_mode')),
             value: themeProvider.themeMode == ThemeMode.dark,
             onChanged: (value) {
               themeProvider.toggleTheme();
             },
           ),
           SwitchListTile(
-            title: const Text('Use System Theme'),
+            title: Text(languageProvider.translate('use_system_theme')),
             value: themeProvider.themeMode == ThemeMode.system,
             onChanged: (value) {
               if (value) {
@@ -133,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
-            title: const Text('App Color'),
+            title: Text(languageProvider.translate('app_color')),
             trailing: CircleAvatar(
               backgroundColor: themeProvider.color,
               radius: 15,
@@ -142,7 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Pick a color'),
+                  title: Text(languageProvider.translate('app_color')),
                   content: SingleChildScrollView(
                     child: ColorPicker(
                       pickerColor: themeProvider.color,
@@ -156,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Done'),
+                      child: Text(languageProvider.translate('save')),
                     ),
                   ],
                 ),
@@ -164,9 +166,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(),
-          _buildSectionHeader(context, 'Currency'),
+          _buildSectionHeader(context, languageProvider.translate('currency')),
           ListTile(
-            title: const Text('Display Currency'),
+            title: Text(languageProvider.translate('display_currency')),
             trailing: DropdownButton<String>(
               value: currencyProvider.currency,
               onChanged: (String? newValue) {
@@ -184,12 +186,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const Divider(),
-          _buildSectionHeader(context, 'Database'),
+          _buildSectionHeader(context, languageProvider.translate('app_language')),
           ListTile(
-            title: const Text('Clear Database'),
-            subtitle: const Text('Delete all transactions from the database.'),
+            title: Text(languageProvider.translate('app_language')),
+            trailing: DropdownButton<String>(
+              value: languageProvider.locale.languageCode,
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  languageProvider.setLanguage(newValue);
+                }
+              },
+              items: <Map<String, String>>[
+                {'code': 'en', 'name': 'English'},
+                {'code': 'es', 'name': 'Español'},
+              ].map<DropdownMenuItem<String>>((Map<String, String> lang) {
+                return DropdownMenuItem<String>(
+                  value: lang['code'],
+                  child: Text(lang['name']!),
+                );
+              }).toList(),
+            ),
+          ),
+          const Divider(),
+          _buildSectionHeader(context, languageProvider.translate('database')),
+          ListTile(
+            title: Text(languageProvider.translate('clear_database')),
+            subtitle: Text(languageProvider.translate('clear_db_sub')),
             trailing: const Icon(Icons.delete_forever),
-            onTap: () => _showClearDatabaseDialog(context),
+            onTap: () => _showClearDatabaseDialog(context, languageProvider),
           ),
         ],
       ),
@@ -209,23 +233,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showClearDatabaseDialog(BuildContext context) {
+  void _showClearDatabaseDialog(BuildContext context, LanguageProvider lang) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Confirm Deletion'),
-          content: const Text(
-              'Are you sure you want to delete all transactions? This action cannot be undone.'),
+          title: Text(lang.translate('confirm_deletion')),
+          content: Text(lang.translate('clear_db_confirm_msg')),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              child: Text(lang.translate('cancel')),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
             ),
             TextButton(
-              child: const Text('Delete'),
+              child: Text(lang.translate('delete')),
               onPressed: () async {
                 if (!mounted) return;
                 final navigator = Navigator.of(dialogContext);
@@ -237,8 +260,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('All transactions have been deleted.'),
+                    SnackBar(
+                      content: Text(lang.translate('db_cleared_msg')),
                       duration: Duration(seconds: 2),
                     ),
                   );

@@ -3,6 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/models/transaction_model.dart' as my_models;
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/providers/currency_provider.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
@@ -36,21 +37,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     transactions.sort((a, b) => b.date.compareTo(a.date));
     setState(() {
       _transactions = transactions;
-      _filteredTransactions = transactions;
+      _applyFilter();
     });
     return transactions;
   }
 
   void _filterTransactions() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredTransactions = _transactions.where((t) {
-        final descriptionMatch = t.description.toLowerCase().contains(query);
-        final categoryMatch = t.category.toLowerCase().contains(query);
-        return descriptionMatch || categoryMatch;
-      }).toList();
-      _applyFilter();
-    });
+    _applyFilter();
   }
 
   void _applyFilter() {
@@ -75,18 +68,18 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     super.dispose();
   }
 
-  Future<void> _deleteTransaction(int id) async {
+  Future<void> _deleteTransaction(int id, LanguageProvider lang) async {
     await DatabaseHelper().deleteTransaction(id);
     _loadTransactions();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Transaction deleted')),
+        SnackBar(content: Text(lang.translate('transaction_deleted'))),
       );
     }
   }
 
   Map<String, List<my_models.Transaction>> _groupTransactionsByDate(
-      List<my_models.Transaction> transactions) {
+      List<my_models.Transaction> transactions, LanguageProvider lang) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -94,9 +87,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     String getGroupKey(DateTime date) {
       final transactionDate = DateTime(date.year, date.month, date.day);
       if (transactionDate == today) {
-        return 'TODAY';
+        return lang.translate('today').toUpperCase();
       } else if (transactionDate == yesterday) {
-        return 'YESTERDAY';
+        return lang.translate('yesterday').toUpperCase();
       } else {
         return DateFormat('MMM d').format(date).toUpperCase();
       }
@@ -108,12 +101,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final currencyProvider = Provider.of<CurrencyProvider>(context);
+    final lang = Provider.of<LanguageProvider>(context);
     final currency = currencyProvider.currency;
-    final groupedTransactions = _groupTransactionsByDate(_filteredTransactions);
+    final groupedTransactions = _groupTransactionsByDate(_filteredTransactions, lang);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('History'),
+        title: Text(lang.translate('history')),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -123,8 +117,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       ),
       body: Column(
         children: [
-          _buildSearchBar(),
-          _buildFilterChips(),
+          _buildSearchBar(lang),
+          _buildFilterChips(lang),
           Expanded(
             child: FutureBuilder<List<my_models.Transaction>>(
               future: _transactionsFuture,
@@ -133,8 +127,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (groupedTransactions.isEmpty) {
-                  return const Center(child: Text('No transactions yet.'));
+                } else if (_transactions.isEmpty) {
+                  return Center(child: Text(lang.translate('no_transactions')));
                 } else {
                   return RefreshIndicator(
                     onRefresh: _loadTransactions,
@@ -162,7 +156,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                               ),
                               ...transactions.map((transaction) {
                                 return _buildTransactionItem(
-                                    transaction, currency);
+                                    transaction, currency, lang);
                               }),
                             ],
                           ),
@@ -179,13 +173,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(LanguageProvider lang) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Search transactions...',
+          hintText: lang.translate('search_transactions'),
           prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant),
           filled: true,
           fillColor: Theme.of(context).colorScheme.surfaceVariant,
@@ -198,15 +192,26 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(LanguageProvider lang) {
+    final filterLabels = {
+      'All': lang.translate('all'),
+      'Income': lang.translate('income'),
+      'Expense': lang.translate('expenses'),
+      'Bills': lang.translate('bills'),
+    };
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: ['All', 'Income', 'Expense', 'Bills']
-            .map((label) => ChoiceChip(
-                  label: Text(label),
-                  selected: _selectedFilter == label,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: ['All', 'Income', 'Expense', 'Bills']
+              .map((label) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: ChoiceChip(
+                      label: Text(filterLabels[label]!),
+                      selected: _selectedFilter == label,
                   onSelected: (selected) {
                     setState(() {
                       _selectedFilter = selected ? label : 'All';
@@ -223,14 +228,16 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     borderRadius: BorderRadius.circular(20),
                     side: BorderSide.none,
                   ),
-                ))
-            .toList(),
+                    ),
+                  ))
+              .toList(),
+        ),
       ),
     );
   }
 
   Widget _buildTransactionItem(
-      my_models.Transaction transaction, String currency) {
+      my_models.Transaction transaction, String currency, LanguageProvider lang) {
     final isIncome = transaction.type == 'Income';
     final colorScheme = Theme.of(context).colorScheme;
     final color = isIncome ? colorScheme.primary : colorScheme.error;
@@ -242,12 +249,12 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         children: [
           SlidableAction(
             onPressed: (context) {
-              _deleteTransaction(transaction.id!);
+              _deleteTransaction(transaction.id!, lang);
             },
             backgroundColor: colorScheme.error,
             foregroundColor: colorScheme.onError,
             icon: Icons.delete,
-            label: 'Delete',
+            label: lang.translate('delete'),
           ),
         ],
       ),
@@ -277,7 +284,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${transaction.category} • ${DateFormat.jm().format(transaction.date)}',
+                      '${lang.translate(transaction.category.toLowerCase())} • ${DateFormat.jm().format(transaction.date)}',
                       style: TextStyle(
                         color: colorScheme.onSurfaceVariant,
                         fontSize: 12,
@@ -302,32 +309,44 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Icon _getIconForCategory(String category) {
-    Color color = _getCategoryColor(category);
     switch (category) {
-      case 'Groceries':
-        return Icon(Icons.shopping_bag_outlined, color: color);
-      case 'Salary':
-        return Icon(Icons.account_balance_wallet_outlined, color: color);
+      case 'Food':
       case 'Dining':
-        return Icon(Icons.local_cafe_outlined, color: color);
+      case 'Groceries':
+        return Icon(Icons.fastfood, color: Colors.orange.shade300);
       case 'Transport':
-        return Icon(Icons.directions_bus_outlined, color: color);
+        return Icon(Icons.directions_car, color: Colors.blue.shade300);
+      case 'Home':
+        return Icon(Icons.home, color: Colors.brown.shade300);
+      case 'Shopping':
+        return Icon(Icons.shopping_bag, color: Colors.pink.shade300);
+      case 'Health':
+        return Icon(Icons.health_and_safety, color: Colors.red.shade300);
+      case 'Movies':
       case 'Netflix':
-        return Icon(Icons.live_tv_outlined, color: color);
+        return Icon(Icons.movie, color: Colors.deepPurple.shade300);
+      case 'Salary':
+        return Icon(Icons.work, color: Colors.green.shade300);
+      case 'Bonus':
+        return Icon(Icons.card_giftcard, color: Colors.amber.shade300);
+      case 'Investment':
+        return Icon(Icons.trending_up, color: Colors.teal.shade300);
+      case 'Gift':
+        return Icon(Icons.cake, color: Colors.purple.shade300);
       default:
-        return Icon(Icons.category_outlined, color: color);
+        return Icon(Icons.category_outlined, color: Theme.of(context).colorScheme.secondary);
     }
   }
 
   Color _getCategoryColor(String category) {
     final colorScheme = Theme.of(context).colorScheme;
     switch (category) {
+      case 'Food':
+      case 'Dining':
       case 'Groceries':
         return colorScheme.secondary;
       case 'Salary':
-        return colorScheme.primary;
-      case 'Dining':
-        return colorScheme.tertiary;
+        return Colors.green.shade300;
       case 'Transport':
         return colorScheme.primary.withOpacity(0.8);
       case 'Netflix':

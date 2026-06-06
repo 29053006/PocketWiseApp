@@ -3,6 +3,7 @@ import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/main.dart';
 import 'package:myapp/models/transaction_model.dart' as my_models;
 import 'package:myapp/providers/currency_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/screens/transaction_history.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
@@ -121,6 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final currencyProvider = Provider.of<CurrencyProvider>(context);
+    final lang = Provider.of<LanguageProvider>(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -129,10 +131,18 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
             padding: const EdgeInsets.all(8.0),
             child: Icon(Icons.account_balance_wallet_rounded,
                 color: Theme.of(context).colorScheme.primary, size: 30)),
-        title: Text('PocketWise',
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface)),
+        title: FutureBuilder<User?>(
+          future: _futureUser,
+          builder: (context, snapshot) {
+            final name = snapshot.data?.name ?? 'PocketWise';
+            return Text(
+              name == 'PocketWise' ? name : 'Hi, $name',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface),
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none_outlined),
@@ -166,27 +176,28 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData) {
-            return const Center(child: Text('No data available'));
+            return Center(child: Text(lang.translate('no_data_period')));
           } else {
             final data = snapshot.data!;
             return ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
                 _buildBalanceCard(
-                    context, data['totalBalance'], currencyProvider.currency),
+                    context, data['totalBalance'], currencyProvider.currency, lang),
                 const SizedBox(height: 20),
                 _buildIncomeExpenseRow(context, data['totalIncome'],
-                    data['totalExpenses'], currencyProvider.currency),
+                    data['totalExpenses'], currencyProvider.currency, lang),
                 const SizedBox(height: 20),
                 _buildBudgetHealthCard(
                     context,
                     data['monthlyExpenses'],
                     data['monthlyBudget'],
                     data['budgetUsedPercentage'],
-                    currencyProvider.currency),
+                    currencyProvider.currency,
+                    lang),
                 const SizedBox(height: 30),
                 _buildRecentTransactions(
-                    context, data['recentTransactions'], currencyProvider.currency),
+                    context, data['recentTransactions'], currencyProvider.currency, lang),
               ],
             );
           }
@@ -196,7 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   }
 
   Widget _buildBalanceCard(
-      BuildContext context, double balance, String currency) {
+      BuildContext context, double balance, String currency, LanguageProvider lang) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
@@ -220,8 +231,8 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Total Balance',
-              style: TextStyle(color: Colors.white70, fontSize: 16)),
+          Text(lang.translate('total_balance'),
+              style: const TextStyle(color: Colors.white70, fontSize: 16)),
           const SizedBox(height: 8),
           Text(
             formatCurrency(balance, currency),
@@ -234,16 +245,16 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   }
 
   Widget _buildIncomeExpenseRow(
-      BuildContext context, double income, double expenses, String currency) {
+      BuildContext context, double income, double expenses, String currency, LanguageProvider lang) {
     return Row(
       children: [
         Expanded(
           child: _buildIncomeExpenseCard(
-              context, 'Income', income, currency, Icons.arrow_downward_rounded, Colors.green),
+              context, lang.translate('income'), income, currency, Icons.arrow_downward_rounded, Colors.green),
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _buildIncomeExpenseCard(context, 'Expenses', expenses, currency,
+          child: _buildIncomeExpenseCard(context, lang.translate('expenses'), expenses, currency,
               Icons.arrow_upward_rounded, Colors.red),
         ),
       ],
@@ -283,7 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   }
 
   Widget _buildBudgetHealthCard(BuildContext context, double monthlyExpenses,
-      double monthlyBudget, double budgetUsedPercentage, String currency) {
+      double monthlyBudget, double budgetUsedPercentage, String currency, LanguageProvider lang) {
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -295,12 +306,12 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Budget Health',
+                Text(lang.translate('budget_health'),
                     style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface)),
-                TextButton(onPressed: () {}, child: const Text('View Plans')),
+                TextButton(onPressed: () {}, child: Text(lang.translate('view_plans'))),
               ],
             ),
             const SizedBox(height: 10),
@@ -308,12 +319,12 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
               children: [
                 Expanded(
                     flex: 3,
-                    child: Text('Monthly Spending',
+                    child: Text(lang.translate('monthly_spending'),
                         style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant))),
                 Expanded(
                     flex: 2,
                     child: Text(
-                        '${(budgetUsedPercentage * 100).toStringAsFixed(0)}% used',
+                        '${(budgetUsedPercentage * 100).toStringAsFixed(0)}${lang.translate('used_perc')}',
                         textAlign: TextAlign.end,
                         style: TextStyle(
                             fontSize: 14,
@@ -332,7 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
             ),
             const SizedBox(height: 4),
             Text(
-              '${formatCurrency(monthlyExpenses, currency)} of ${formatCurrency(monthlyBudget, currency)}',
+              '${formatCurrency(monthlyExpenses, currency)} ${lang.translate('of')} ${formatCurrency(monthlyBudget, currency)}',
               style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
@@ -342,14 +353,14 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   }
 
   Widget _buildRecentTransactions(
-      BuildContext context, List<my_models.Transaction> transactions, String currency) {
+      BuildContext context, List<my_models.Transaction> transactions, String currency, LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Recent Transactions',
+            Text(lang.translate('recent_transactions'),
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -362,7 +373,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
                       builder: (context) => const TransactionHistoryScreen()),
                 );
               },
-              child: const Text('See All'),
+              child: Text(lang.translate('see_all')),
             ),
           ],
         ),
@@ -411,40 +422,32 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   }
 
   Icon _getIconForCategory(String category) {
-    Color iconColor;
     switch (category) {
-      case 'Groceries':
-        iconColor = Colors.orange.shade300;
-        break;
-      case 'Salary':
-        iconColor = Colors.green.shade300;
-        break;
+      case 'Food':
       case 'Dining':
-        iconColor = Colors.red.shade300;
-        break;
-      case 'Transport':
-        iconColor = Colors.blue.shade300;
-        break;
-      case 'Netflix':
-        iconColor = Colors.deepPurple.shade300;
-        break;
-      default:
-        iconColor = Theme.of(context).colorScheme.secondary;
-    }
-
-    switch (category) {
       case 'Groceries':
-        return Icon(Icons.shopping_bag_outlined, color: iconColor);
-      case 'Salary':
-        return Icon(Icons.account_balance_wallet_outlined, color: iconColor);
-      case 'Dining':
-        return Icon(Icons.local_cafe_outlined, color: iconColor);
+        return Icon(Icons.fastfood, color: Colors.orange.shade300);
       case 'Transport':
-        return Icon(Icons.directions_bus_outlined, color: iconColor);
+        return Icon(Icons.directions_car, color: Colors.blue.shade300);
+      case 'Home':
+        return Icon(Icons.home, color: Colors.brown.shade300);
+      case 'Shopping':
+        return Icon(Icons.shopping_bag, color: Colors.pink.shade300);
+      case 'Health':
+        return Icon(Icons.health_and_safety, color: Colors.red.shade300);
+      case 'Movies':
       case 'Netflix':
-        return Icon(Icons.live_tv_outlined, color: iconColor);
+        return Icon(Icons.movie, color: Colors.deepPurple.shade300);
+      case 'Salary':
+        return Icon(Icons.work, color: Colors.green.shade300);
+      case 'Bonus':
+        return Icon(Icons.card_giftcard, color: Colors.amber.shade300);
+      case 'Investment':
+        return Icon(Icons.trending_up, color: Colors.teal.shade300);
+      case 'Gift':
+        return Icon(Icons.cake, color: Colors.purple.shade300);
       default:
-        return Icon(Icons.category_outlined, color: iconColor);
+        return Icon(Icons.category_outlined, color: Theme.of(context).colorScheme.secondary);
     }
   }
 }

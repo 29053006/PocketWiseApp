@@ -3,6 +3,7 @@ import 'package:myapp/data/database_helper.dart';
 import 'package:myapp/models/transaction_model.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/main.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -75,12 +76,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  void _submitData() async {
+  void _submitData(LanguageProvider lang) async {
     if (_formKey.currentState!.validate()) {
       final amount = double.tryParse(_amountController.text.replaceAll(',', '.'));
       if (amount == null || amount <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid amount')),
+          SnackBar(content: Text(lang.translate('enter_valid_amount'))),
         );
         return;
       }
@@ -104,6 +105,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -111,7 +113,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20), 
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('New Transaction'),
+        title: Text(lang.translate('new_transaction')),
         backgroundColor: Colors.transparent,
       ),
       body: Padding(
@@ -122,19 +124,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             physics: const BouncingScrollPhysics(),
             children: <Widget>[
               const SizedBox(height: 10),
-              _buildAmountField(),
+              _buildAmountField(lang),
               const SizedBox(height: 30),
-              _buildTransactionTypeSelector(),
+              _buildTransactionTypeSelector(lang),
               const SizedBox(height: 30),
-              _buildCategorySelector(),
+              _buildCategorySelector(lang),
               const SizedBox(height: 30),
-              _buildDateField(),
+              _buildDateField(lang),
               const SizedBox(height: 30),
-              _buildNoteField(),
+              _buildNoteField(lang),
               const SizedBox(height: 30),
-              _buildBudgetInfo(),
+              _buildBudgetInfo(lang),
               const SizedBox(height: 40),
-              _buildSaveButton(themeProvider.color),
+              _buildSaveButton(themeProvider.color, lang),
             ],
           ),
         ),
@@ -142,11 +144,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildAmountField() {
+  Widget _buildAmountField(LanguageProvider lang) {
     return Column(
       children: [
         Text(
-          'AMOUNT',
+          lang.translate('amount_label'),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             letterSpacing: 1.5,
@@ -179,7 +181,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter an amount';
+                    return lang.translate('enter_amount_error');
                   }
                   return null;
                 },
@@ -191,12 +193,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildTransactionTypeSelector() {
+  Widget _buildTransactionTypeSelector(LanguageProvider lang) {
     return Center(
       child: SegmentedButton<String>(
-        segments: const [
-          ButtonSegment(value: 'Expense', label: Text('Expense'), icon: Icon(Icons.outbound_outlined)),
-          ButtonSegment(value: 'Income', label: Text('Income'), icon: Icon(Icons.next_plan_outlined)),
+        segments: [
+          ButtonSegment(value: 'Expense', label: Text(lang.translate('expenses')), icon: const Icon(Icons.outbound_outlined)),
+          ButtonSegment(value: 'Income', label: Text(lang.translate('income')), icon: const Icon(Icons.next_plan_outlined)),
         ],
         selected: {_selectedType},
         onSelectionChanged: (Set<String> newSelection) {
@@ -210,13 +212,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
     );
   }
-  Widget _buildCategorySelector() {
+  Widget _buildCategorySelector(LanguageProvider lang) {
     final categories = _selectedType == 'Expense' ? _expenseCategories : _incomeCategories;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Select Category',
+          lang.translate('select_category'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
@@ -248,7 +250,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   children: [
                     Icon(icon, color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(height: 8),
-                    Text(category, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                    Text(lang.translate(category.toLowerCase()), style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
                 ),
               ),
@@ -259,12 +261,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildDateField() {
+  Widget _buildDateField(LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Date',
+          lang.translate('date'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -291,19 +293,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-   Widget _buildNoteField() {
+   Widget _buildNoteField(LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Note (Optional)',
+          lang.translate('note'),
            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: _noteController,
           decoration: InputDecoration(
-            hintText: 'What was this for?',
+            hintText: lang.translate('what_was_this_for'),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surfaceVariant,
             border: OutlineInputBorder(
@@ -316,39 +318,39 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildBudgetInfo() {
-  return Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        width: 1,
+  Widget _buildBudgetInfo(LanguageProvider lang) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          width: 1,
+        ),
       ),
-    ),
-    child: Row(
-      children: [
-        Icon(
-          Icons.info_outline,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Text(
-            'Saving this will put you at 82% of your monthly food budget.',
-            style: TextStyle(fontWeight: FontWeight.w500),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: Theme.of(context).colorScheme.primary,
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '${lang.translate('budget_info_msg_start')}82${lang.translate('budget_info_msg_end')}',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
 
-  Widget _buildSaveButton(Color buttonColor) {
+  Widget _buildSaveButton(Color buttonColor, LanguageProvider lang) {
     return ElevatedButton(
-      onPressed: _submitData,
+      onPressed: () => _submitData(lang),
       style: ElevatedButton.styleFrom(
         backgroundColor: buttonColor, 
         foregroundColor: Colors.white,
@@ -357,7 +359,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           borderRadius: BorderRadius.circular(30),
         ),
       ),
-      child: const Text('Save Transaction', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      child: Text(lang.translate('save_transaction'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
     );
   }
 }

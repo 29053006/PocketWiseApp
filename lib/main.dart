@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:myapp/providers/currency_provider.dart';
+import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/screens/add_transaction.dart';
 import 'package:myapp/screens/dashboard_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
@@ -45,6 +47,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => CurrencyProvider()),
+        ChangeNotifierProvider(create: (context) => LanguageProvider()),
       ],
       child: MyApp(isFirstTime: isFirstTime),
     ),
@@ -180,13 +183,23 @@ class MyApp extends StatelessWidget {
       ),
     );
 
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, LanguageProvider>(
+      builder: (context, themeProvider, languageProvider, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'PocketWise',
           theme: lightTheme,
           darkTheme: darkTheme,
+          locale: languageProvider.locale,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en'),
+            Locale('es'),
+          ],
           themeMode: themeProvider.themeMode,
           navigatorObservers: [routeObserver],
           initialRoute: isFirstTime ? '/welcome' : '/main',
@@ -236,6 +249,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
@@ -247,11 +262,11 @@ class _MainScreenState extends State<MainScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
-            _buildNavItem(Icons.widgets_outlined, 'Home', 0),
-            _buildNavItem(Icons.history, 'History', 1),
+            _buildNavItem(Icons.widgets_outlined, lang.translate('home'), 0),
+            _buildNavItem(Icons.history, lang.translate('history'), 1),
             const SizedBox(width: 40), // The space for the FAB
-            _buildNavItem(Icons.pie_chart_outline, 'Stats', 3),
-            _buildNavItem(Icons.settings_outlined, 'Settings', 4),
+            _buildNavItem(Icons.pie_chart_outline, lang.translate('stats'), 3),
+            _buildNavItem(Icons.settings_outlined, lang.translate('settings'), 4),
           ],
         ),
       ),

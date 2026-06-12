@@ -10,6 +10,7 @@ import 'package:myapp/screens/statistics_screen.dart';
 import 'package:myapp/screens/transaction_history.dart';
 import 'package:myapp/screens/welcome_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/providers/notification_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -48,6 +49,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => CurrencyProvider()),
         ChangeNotifierProvider(create: (context) => LanguageProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider()),
       ],
       child: MyApp(isFirstTime: isFirstTime),
     ),

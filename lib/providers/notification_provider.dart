@@ -1,0 +1,97 @@
+import 'package:flutter/material.dart';
+import 'package:myapp/data/database_helper.dart';
+
+class NotificationItem {
+  final String id;
+  final String titleKey;
+  final String messageKey;
+  final DateTime timestamp;
+  bool isRead;
+
+  NotificationItem({
+    required this.id,
+    required this.titleKey,
+    required this.messageKey,
+    required this.timestamp,
+    this.isRead = false,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'titleKey': titleKey,
+      'messageKey': messageKey,
+      'timestamp': timestamp.toIso8601String(),
+      'isRead': isRead ? 1 : 0,
+    };
+  }
+
+  factory NotificationItem.fromMap(Map<String, dynamic> map) {
+    return NotificationItem(
+      id: map['id'],
+      titleKey: map['titleKey'],
+      messageKey: map['messageKey'],
+      timestamp: DateTime.parse(map['timestamp']),
+      isRead: map['isRead'] == 1,
+    );
+  }
+}
+
+class NotificationProvider with ChangeNotifier {
+  final List<NotificationItem> _notifications = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+
+  List<NotificationItem> get notifications => _notifications;
+  int get unreadCount => _notifications.where((n) => !n.isRead).length;
+
+  NotificationProvider() {
+    _loadFromDb();
+  }
+
+  Future<void> _loadFromDb() async {
+    final data = await _dbHelper.getNotifications();
+    _notifications.clear();
+    _notifications.addAll(data.map((m) => NotificationItem.fromMap(m)));
+    notifyListeners();
+  }
+
+  Future<void> addNotification({required String titleKey, required String messageKey}) async {
+    // Evitar duplicar la misma notificación en un corto periodo (ej. alerta de presupuesto)
+    if (_notifications.any((n) => n.titleKey == titleKey && 
+        n.timestamp.day == DateTime.now().day && 
+        n.timestamp.month == DateTime.now().month)) {
+      return;
+    }
+
+    final newItem = NotificationItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      titleKey: titleKey,
+      messageKey: messageKey,
+      timestamp: DateTime.now(),
+    );
+
+    _notifications.insert(0, newItem);
+    notifyListeners();
+    await _dbHelper.insertNotification(newItem.toMap());
+  }
+
+  Future<void> markAllAsRead() async {
+    for (var n in _notifications) {
+      n.isRead = true;
+    }
+    notifyListeners();
+    await _dbHelper.markAllNotificationsRead();
+  }
+
+  Future<void> deleteNotification(String id) async {
+    _notifications.removeWhere((n) => n.id == id);
+    notifyListeners();
+    await _dbHelper.deleteNotification(id);
+  }
+
+  Future<void> clearNotifications() async {
+    _notifications.clear();
+    notifyListeners();
+    await _dbHelper.deleteAllNotifications();
+  }
+}

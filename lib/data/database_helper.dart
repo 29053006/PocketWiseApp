@@ -32,7 +32,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'app.db');
     return await openDatabase(
       path,
-      version: 3, // Incremented version for budget table
+      version: 4, // Incremented version for notifications table
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -64,6 +64,16 @@ class DatabaseHelper {
     ''');
     // Insert default budget
     await db.insert('budgets', {'id': 1, 'amount': 2000.0});
+
+    await db.execute('''
+      CREATE TABLE notifications (
+        id TEXT PRIMARY KEY,
+        titleKey TEXT,
+        messageKey TEXT,
+        timestamp TEXT,
+        isRead INTEGER
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -74,6 +84,17 @@ class DatabaseHelper {
     if (oldVersion < 3) {
       await db.execute('CREATE TABLE budgets(id INTEGER PRIMARY KEY, amount REAL)');
       await db.insert('budgets', {'id': 1, 'amount': 2000.0});
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE notifications (
+          id TEXT PRIMARY KEY,
+          titleKey TEXT,
+          messageKey TEXT,
+          timestamp TEXT,
+          isRead INTEGER
+        )
+      ''');
     }
   }
 
@@ -152,5 +173,30 @@ class DatabaseHelper {
   Future<int> updateMonthlyBudget(double amount) async {
     final db = await database;
     return await db.update('budgets', {'amount': amount}, where: 'id = 1');
+  }
+
+  Future<void> insertNotification(Map<String, dynamic> map) async {
+    final db = await database;
+    await db.insert('notifications', map);
+  }
+
+  Future<List<Map<String, dynamic>>> getNotifications() async {
+    final db = await database;
+    return await db.query('notifications', orderBy: 'timestamp DESC');
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    final db = await database;
+    await db.update('notifications', {'isRead': 1});
+  }
+
+  Future<void> deleteNotification(String id) async {
+    final db = await database;
+    await db.delete('notifications', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteAllNotifications() async {
+    final db = await database;
+    await db.delete('notifications');
   }
 }

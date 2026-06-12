@@ -6,8 +6,11 @@ import 'package:myapp/providers/currency_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/screens/budget_screen.dart';
 import 'package:myapp/screens/transaction_history.dart';
+import 'package:myapp/screens/notification_screen.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/providers/notification_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:myapp/models/user_model.dart';
@@ -30,6 +33,41 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     super.initState();
     _dashboardData = _getDashboardData();
     _futureUser = dbHelper.getUser();
+
+    // Verificar notificación de bienvenida después del primer frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkSystemNotifications();
+    });
+  }
+
+  Future<void> _checkSystemNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final notifProvider = Provider.of<NotificationProvider>(context, listen: false);
+
+    // 1. Notificación de Bienvenida
+    final bool hasShowedWelcome = prefs.getBool('welcome_notification_sent') ?? false;
+    if (!hasShowedWelcome) {
+      if (!mounted) return;
+      notifProvider.addNotification(
+        titleKey: 'welcome_notif_title',
+        messageKey: 'welcome_notif_msg',
+      );
+      await prefs.setBool('welcome_notification_sent', true);
+    }
+
+    // 2. Recordatorio Diario (si no hay registros hoy)
+    final transactions = await dbHelper.getTransactions();
+    final now = DateTime.now();
+    final hasToday = transactions.any((t) => 
+        t.date.day == now.day && t.date.month == now.month && t.date.year == now.year);
+    
+    if (!hasToday) {
+      if (!mounted) return;
+      notifProvider.addNotification(
+        titleKey: 'reminder_notif_title',
+        messageKey: 'reminder_notif_msg',
+      );
+    }
   }
 
   Future<Map<String, dynamic>> _getDashboardData() async {
@@ -54,6 +92,18 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     final budgetUsedPercentage =
         (monthlyBudget > 0 ? monthlyExpenses / monthlyBudget : 0.0)
             .clamp(0.0, 1.0);
+
+    // 3. Notificación de Presupuesto > 90%
+    if (budgetUsedPercentage >= 0.9) {
+      Future.microtask(() {
+        if (mounted) {
+          Provider.of<NotificationProvider>(context, listen: false).addNotification(
+            titleKey: 'budget_alert_title',
+            messageKey: 'budget_alert_msg',
+          );
+        }
+      });
+    }
 
     transactions.sort((a, b) => b.date.compareTo(a.date));
     return {
@@ -145,9 +195,24 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_outlined),
-            onPressed: () {},
+          Consumer<NotificationProvider>(
+            builder: (context, notifProvider, child) {
+              return Badge(
+                label: Text(notifProvider.unreadCount.toString()),
+                isLabelVisible: notifProvider.unreadCount > 0,
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_none_outlined),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationScreen(),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
           FutureBuilder<User?>(
             future: _futureUser,

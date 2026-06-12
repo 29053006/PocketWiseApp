@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LanguageProvider with ChangeNotifier {
-  Locale _locale = Locale(PlatformDispatcher.instance.locale.languageCode == 'es' ? 'es' : 'en');
+  Locale _locale = const Locale('en'); // Valor por defecto seguro
   static const String _languageKey = 'language_code';
 
   Locale get locale => _locale;
@@ -16,8 +16,15 @@ class LanguageProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     String? savedLanguageCode = prefs.getString(_languageKey);
     
-    if (savedLanguageCode != null && _locale.languageCode != savedLanguageCode) {
-      _locale = Locale(savedLanguageCode);
+    if (savedLanguageCode != null) {
+      if (_locale.languageCode != savedLanguageCode) {
+        _locale = Locale(savedLanguageCode);
+        notifyListeners();
+      }
+    } else {
+      // Si no hay guardado, detectar el del sistema
+      final systemCode = PlatformDispatcher.instance.locale.languageCode;
+      _locale = Locale(systemCode == 'es' ? 'es' : 'en');
       notifyListeners();
     }
   }

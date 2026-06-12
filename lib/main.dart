@@ -10,6 +10,7 @@ import 'package:myapp/screens/statistics_screen.dart';
 import 'package:myapp/screens/transaction_history.dart';
 import 'package:myapp/screens/welcome_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:myapp/providers/notification_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -23,9 +24,41 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 
 void main() async {
   developer.log('App starting...');
-  final startTime = DateTime.now();
-
   WidgetsFlutterBinding.ensureInitialized();
+
+  final startTime = DateTime.now();
+  // --- Inicialización de FlutterLocalNotificationsPlugin ---
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  try {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher'); // Usamos el icono por defecto para evitar errores
+
+    const DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
+      macOS: initializationSettingsDarwin,
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+        developer.log('Notification tapped: ${notificationResponse.payload}');
+      },
+    );
+  } catch (e) {
+    developer.log('Error initializing notifications: $e');
+    // La app continuará aunque las notificaciones fallen
+  }
+  // --- Fin de la inicialización de FlutterLocalNotificationsPlugin ---
 
   // Initialize FFI for sqflite on desktop
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
@@ -49,7 +82,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => CurrencyProvider()),
         ChangeNotifierProvider(create: (context) => LanguageProvider()),
-        ChangeNotifierProvider(create: (context) => NotificationProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider(flutterLocalNotificationsPlugin)),
       ],
       child: MyApp(isFirstTime: isFirstTime),
     ),

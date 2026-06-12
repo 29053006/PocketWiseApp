@@ -44,6 +44,9 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     final prefs = await SharedPreferences.getInstance();
     final notifProvider = Provider.of<NotificationProvider>(context, listen: false);
 
+    // Solicitar permisos de sistema para Android 13+
+    await notifProvider.requestPermissions();
+
     // 1. Notificación de Bienvenida
     final bool hasShowedWelcome = prefs.getBool('welcome_notification_sent') ?? false;
     if (!hasShowedWelcome) {

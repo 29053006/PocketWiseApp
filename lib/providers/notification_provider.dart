@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:myapp/data/database_helper.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationItem {
   final String id;
@@ -39,13 +41,23 @@ class NotificationItem {
 
 class NotificationProvider with ChangeNotifier {
   final List<NotificationItem> _notifications = [];
-  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final DatabaseHelper _dbHelper;
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
 
   List<NotificationItem> get notifications => _notifications;
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
-  NotificationProvider() {
+  NotificationProvider(this._flutterLocalNotificationsPlugin) : _dbHelper = DatabaseHelper() {
     _loadFromDb();
+  }
+
+  Future<void> requestPermissions() async {
+    if (Platform.isAndroid) {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      await androidImplementation?.requestNotificationsPermission();
+    }
   }
 
   Future<void> _loadFromDb() async {
@@ -72,7 +84,29 @@ class NotificationProvider with ChangeNotifier {
 
     _notifications.insert(0, newItem);
     notifyListeners();
+    
     await _dbHelper.insertNotification(newItem.toMap());
+
+    // Programar la notificación local del sistema
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'pocketwise_channel_id', // ID del canal
+      'PocketWise Notifications', // Nombre del canal
+      channelDescription: 'Notifications from PocketWise app', // Descripción del canal
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+    );
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics = DarwinNotificationDetails();
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
+    await _flutterLocalNotificationsPlugin.show(
+      int.parse(newItem.id.substring(newItem.id.length - 9)), // Usar parte del ID como int para la notificación
+      titleKey, // El título se traducirá en la UI
+      messageKey, // El mensaje se traducirá en la UI
+      platformChannelSpecifics,
+      payload: newItem.id, // Puedes pasar el ID de la notificación para manejarla al tocar
+    );
   }
 
   Future<void> markAllAsRead() async {

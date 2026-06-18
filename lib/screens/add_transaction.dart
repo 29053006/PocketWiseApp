@@ -19,8 +19,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _noteController = TextEditingController();
   final _amountFocusNode = FocusNode();
 
-  String _selectedType = 'Expense';
-  String _selectedCategory = 'Food';
+  String _selectedType = 'Income';
+  String _selectedCategory = 'Salary';
   DateTime _selectedDate = DateTime.now();
 
   final Map<String, IconData> _expenseCategories = {
@@ -30,6 +30,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     'Shopping': Icons.shopping_bag,
     'Health': Icons.health_and_safety,
     'Movies': Icons.movie,
+    'Other': Icons.more_horiz,
   };
 
   final Map<String, IconData> _incomeCategories = {
@@ -43,7 +44,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedCategory = _expenseCategories.keys.first;
+    _selectedCategory = _incomeCategories.keys.first;
     _amountFocusNode.addListener(() {
       if (_amountFocusNode.hasFocus && _amountController.text == '0,00') {
         _amountController.clear();
@@ -197,8 +198,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Center(
       child: SegmentedButton<String>(
         segments: [
-          ButtonSegment(value: 'Expense', label: Text(lang.translate('expenses')), icon: const Icon(Icons.outbound_outlined)),
           ButtonSegment(value: 'Income', label: Text(lang.translate('income')), icon: const Icon(Icons.next_plan_outlined)),
+          ButtonSegment(value: 'Expense', label: Text(lang.translate('expenses')), icon: const Icon(Icons.outbound_outlined))
         ],
         selected: {_selectedType},
         onSelectionChanged: (Set<String> newSelection) {
@@ -305,7 +306,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         TextFormField(
           controller: _noteController,
           decoration: InputDecoration(
-            hintText: lang.translate('what_was_this_for'),
+            hintText: lang.translate(_selectedCategory = _selectedType == 'Expense' 
+              ? 'what_was_this_for'
+              : 'where_did_this_come_from'),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(

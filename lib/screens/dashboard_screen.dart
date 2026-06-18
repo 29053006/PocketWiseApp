@@ -205,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
           builder: (context, snapshot) {
             final name = snapshot.data?.name ?? 'PocketWise';
             return Text(
-              name == 'PocketWise' ? name : 'Hi, $name',
+              name == 'PocketWise' ? name : '${lang.translate('Hi')}, $name',
               style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface),

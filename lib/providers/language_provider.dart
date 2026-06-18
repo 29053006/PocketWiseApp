@@ -110,6 +110,7 @@ class LanguageProvider with ChangeNotifier {
       'budget_info_msg_start': 'Saving this will put you at ',
       'budget_info_msg_end': '% of your monthly food budget.',
       'what_was_this_for': 'What was this for?',
+      'where_did_this_come_from': 'Where did this come from?',
       'no_user_data': 'No user data',
       // Categories
       'cat_food': 'Food', 'cat_transport': 'Transport', 'cat_home': 'Home', 'cat_shopping': 'Shopping',
@@ -198,6 +199,7 @@ class LanguageProvider with ChangeNotifier {
       'budget_info_msg_start': 'Guardar esto te pondrá al ',
       'budget_info_msg_end': '% de tu presupuesto mensual de comida.',
       'what_was_this_for': '¿Para qué fue esto?',
+      'where_did_this_come_from': '¿De dónde vino esto?',
       'no_user_data': 'Sin datos de usuario',
       // Categories
       'cat_food': 'Comida', 'cat_transport': 'Transporte', 'cat_home': 'Hogar', 'cat_shopping': 'Compras',
@@ -214,6 +216,7 @@ class LanguageProvider with ChangeNotifier {
       'notifications': 'Notificaciones',
       'no_notifications': 'No hay notificaciones nuevas',
       'notification_deleted': 'Notificación eliminada',
+      'Hi': 'Hola',
     },
   };
 

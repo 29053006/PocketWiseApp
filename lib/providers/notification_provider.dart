@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:myapp/data/database_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:myapp/providers/language_provider.dart';
 
 class NotificationItem {
   final String id;
@@ -43,11 +44,13 @@ class NotificationProvider with ChangeNotifier {
   final List<NotificationItem> _notifications = [];
   final DatabaseHelper _dbHelper;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
+  final LanguageProvider _languageProvider;
 
-  List<NotificationItem> get notifications => _notifications;
+  List<NotificationItem> get notifications => _notifications; // This is for in-app notifications
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
-  NotificationProvider(this._flutterLocalNotificationsPlugin) : _dbHelper = DatabaseHelper() {
+  NotificationProvider(this._flutterLocalNotificationsPlugin, this._languageProvider)
+      : _dbHelper = DatabaseHelper() {
     _loadFromDb();
   }
 
@@ -71,7 +74,8 @@ class NotificationProvider with ChangeNotifier {
     // Evitar duplicar la misma notificación en un corto periodo (ej. alerta de presupuesto)
     if (_notifications.any((n) => n.titleKey == titleKey && 
         n.timestamp.day == DateTime.now().day && 
-        n.timestamp.month == DateTime.now().month)) {
+        n.timestamp.month == DateTime.now().month &&
+        n.timestamp.year == DateTime.now().year)) {
       return;
     }
 
@@ -102,8 +106,8 @@ class NotificationProvider with ChangeNotifier {
         android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
     await _flutterLocalNotificationsPlugin.show(
       int.parse(newItem.id.substring(newItem.id.length - 9)), // Usar parte del ID como int para la notificación
-      titleKey, // El título se traducirá en la UI
-      messageKey, // El mensaje se traducirá en la UI
+      _languageProvider.translate(titleKey), // El título traducido para la notificación del sistema
+      _languageProvider.translate(messageKey), // El mensaje traducido para la notificación del sistema
       platformChannelSpecifics,
       payload: newItem.id, // Puedes pasar el ID de la notificación para manejarla al tocar
     );

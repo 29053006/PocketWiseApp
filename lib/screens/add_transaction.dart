@@ -150,7 +150,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         Text(
           lang.translate('amount_label'),
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             letterSpacing: 1.5,
           ),
         ),
@@ -241,7 +241,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               onTap: () => setState(() => _selectedCategory = category),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.2) : Theme.of(context).colorScheme.surfaceVariant,
+                  color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(15),
                   border: isSelected ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2) : null,
                 ),
@@ -275,7 +275,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -307,7 +307,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           decoration: InputDecoration(
             hintText: lang.translate('what_was_this_for'),
             filled: true,
-            fillColor: Theme.of(context).colorScheme.surfaceVariant,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -322,7 +322,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.primaryContainer,

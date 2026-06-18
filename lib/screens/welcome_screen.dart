@@ -57,7 +57,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              colorScheme.primary.withOpacity(0.05),
+              colorScheme.primary.withValues(alpha: 0.05),
               colorScheme.surface,
             ],
           ),
@@ -81,7 +81,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     child: Text(
                       lang.translate('data_local_secure'),
                       style: TextStyle(
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -102,7 +102,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: SvgPicture.asset(
@@ -154,7 +154,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           decoration: InputDecoration(
             hintText: lang.translate('name_hint'),
             filled: true,
-            fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+            fillColor: colorScheme.surfaceVariant.withValues(alpha: 0.3),
             prefixIcon: const Icon(Icons.person_outline),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -187,7 +187,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 20),
           elevation: 8,
-          shadowColor: buttonColor.withOpacity(0.4),
+          shadowColor: buttonColor.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),

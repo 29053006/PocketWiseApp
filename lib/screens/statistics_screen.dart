@@ -7,6 +7,7 @@ import 'package:myapp/providers/currency_provider.dart';
 import 'package:myapp/providers/language_provider.dart';
 import 'package:myapp/util/currency_util.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/screens/notification_screen.dart';
 import 'dart:math';
 
 class StatisticsScreen extends StatefulWidget {
@@ -94,7 +95,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           IconButton(
             icon: const Icon(Icons.notifications_none_outlined),
             onPressed: () {
-              // Handle notifications action
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationScreen(),
+                ),
+              );
             },
           ),
         ],
@@ -156,9 +162,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -240,8 +246,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       colorScheme.primary,
       colorScheme.secondary,
       colorScheme.tertiary,
-      colorScheme.primary.withOpacity(0.7),
-      colorScheme.secondary.withOpacity(0.7),
+      colorScheme.primary.withValues(alpha: 0.7),
+      colorScheme.secondary.withValues(alpha: 0.7),
     ];
     int colorIndex = 0;
 
@@ -479,7 +485,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.tertiary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.lightbulb_outline,
@@ -498,7 +504,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   tip,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onTertiaryContainer.withOpacity(0.8), fontSize: 14),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onTertiaryContainer.withValues(alpha: 0.8), fontSize: 14),
                 ),
               ],
             ),

@@ -58,18 +58,25 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       await prefs.setBool('welcome_notification_sent', true);
     }
 
-    // 2. Recordatorio Diario (si no hay registros hoy)
-    final transactions = await dbHelper.getTransactions();
+    // 2. Recordatorio Diario (si no hay registros hoy y no se ha procesado hoy)
     final now = DateTime.now();
-    final hasToday = transactions.any((t) => 
-        t.date.day == now.day && t.date.month == now.month && t.date.year == now.year);
-    
-    if (!hasToday) {
-      if (!mounted) return;
-      notifProvider.addNotification(
-        titleKey: 'reminder_notif_title',
-        messageKey: 'reminder_notif_msg',
-      );
+    final todayStr = DateFormat('yyyy-MM-dd').format(now);
+    final lastReminderDate = prefs.getString('last_daily_reminder_date');
+
+    if (lastReminderDate != todayStr) {
+      final transactions = await dbHelper.getTransactions();
+      final hasToday = transactions.any((t) => 
+          t.date.day == now.day && t.date.month == now.month && t.date.year == now.year);
+      
+      if (!hasToday) {
+        if (!mounted) return;
+        notifProvider.addNotification(
+          titleKey: 'reminder_notif_title',
+          messageKey: 'reminder_notif_msg',
+        );
+      }
+      // Guardamos que ya se revisó/envió el recordatorio para el día de hoy
+      await prefs.setString('last_daily_reminder_date', todayStr);
     }
   }
 
@@ -98,14 +105,21 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
 
     // 3. Notificación de Presupuesto > 90%
     if (budgetUsedPercentage >= 0.9) {
-      Future.microtask(() {
-        if (mounted) {
-          Provider.of<NotificationProvider>(context, listen: false).addNotification(
-            titleKey: 'budget_alert_title',
-            messageKey: 'budget_alert_msg',
-          );
-        }
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final todayStr = DateFormat('yyyy-MM-dd').format(now);
+      final lastBudgetAlertDate = prefs.getString('last_budget_alert_date');
+
+      if (lastBudgetAlertDate != todayStr) {
+        Future.microtask(() {
+          if (mounted) {
+            Provider.of<NotificationProvider>(context, listen: false).addNotification(
+              titleKey: 'budget_alert_title',
+              messageKey: 'budget_alert_msg',
+            );
+          }
+        });
+        await prefs.setString('last_budget_alert_date', todayStr);
+      }
     }
 
     transactions.sort((a, b) => b.date.compareTo(a.date));
@@ -166,6 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
         );
         await dbHelper.updateUser(updatedUser);
         
+        if (!mounted) return;
         setState(() {
           _futureUser = dbHelper.getUser();
         });
@@ -301,12 +316,16 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(lang.translate('total_balance'),
-              style: const TextStyle(color: Colors.white70, fontSize: 16)),
+              style: const TextStyle(color: Colors.white70, fontSize: 14)),
           const SizedBox(height: 8),
-          Text(
-            formatCurrency(balance, currency),
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: -1),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              formatCurrency(balance, currency),
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: Colors.white, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -335,7 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
@@ -344,19 +363,29 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
         children: [
           Row(
             children: [
-              Icon(icon, color: iconColor, size: 20),
-              const SizedBox(width: 8),
-              Text(title,
+              Icon(icon, color: iconColor, size: 18),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
                   style: TextStyle(
-                      fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(formatCurrency(amount, currency),
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(formatCurrency(amount, currency),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ),
         ],
       ),
     );
@@ -375,17 +404,23 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(lang.translate('budget_health'),
+                Expanded(
+                  child: Text(
+                    lang.translate('budget_health'),
                     style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface)),
+                        color: Theme.of(context).colorScheme.onSurface),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const BudgetScreen()),
                   ).then((_) => didPopNext()), 
-                  child: Text(lang.translate('manage_budget'))),
+                  child: Text(lang.translate('manage_budget'), 
+                    style: const TextStyle(fontSize: 13))),
               ],
             ),
             const SizedBox(height: 10),
@@ -397,28 +432,35 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
                         style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant))),
                 Expanded(
                     flex: 2,
-                    child: Text(
-                        '${(budgetUsedPercentage * 100).toStringAsFixed(0)}${lang.translate('used_perc')}',
-                        textAlign: TextAlign.end,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold))),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                          '${(budgetUsedPercentage * 100).toStringAsFixed(0)}${lang.translate('used_perc')}',
+                          textAlign: TextAlign.end,
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold)),
+                    )),
               ],
             ),
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: budgetUsedPercentage,
-              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(
                   Theme.of(context).colorScheme.primary),
               minHeight: 6,
               borderRadius: BorderRadius.circular(3),
             ),
             const SizedBox(height: 4),
-            Text(
-              '${formatCurrency(monthlyExpenses, currency)} ${lang.translate('of')} ${formatCurrency(monthlyBudget, currency)}',
-              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '${formatCurrency(monthlyExpenses, currency)} ${lang.translate('of')} ${formatCurrency(monthlyBudget, currency)}',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
             ),
           ],
         ),
@@ -471,21 +513,25 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: _getIconForCategory(transaction.category),
                 ),
-                title: Text(transaction.description,
+                title: Text(
+                  transaction.description,
                     style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface)),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 subtitle: Text(DateFormat.yMMMd().format(transaction.date),
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 trailing: Text(
                   '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount, currency)}',
                   style: TextStyle(
-                      fontWeight: FontWeight.bold, color: color, fontSize: 16),
+                      fontWeight: FontWeight.bold, color: color, fontSize: 15),
                 ),
               ),
             );

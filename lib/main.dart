@@ -42,7 +42,7 @@ void main() async {
       requestSoundPermission: true,
     );
 
-    final InitializationSettings initializationSettings = InitializationSettings(
+    const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsDarwin,
       macOS: initializationSettingsDarwin,
@@ -60,7 +60,6 @@ void main() async {
   }
   // --- Fin de la inicialización de FlutterLocalNotificationsPlugin ---
 
-  // Initialize FFI for sqflite on desktop
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
@@ -72,9 +71,7 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
-  final endTime = DateTime.now();
-  final duration = endTime.difference(startTime); // Corrected syntax
-  developer.log('Initialization complete in ${duration.inMilliseconds} ms');
+  developer.log('Initialization complete in ${DateTime.now().difference(startTime).inMilliseconds} ms');
 
   runApp(
     MultiProvider(
@@ -82,7 +79,9 @@ void main() async {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => CurrencyProvider()),
         ChangeNotifierProvider(create: (context) => LanguageProvider()),
-        ChangeNotifierProvider(create: (context) => NotificationProvider(flutterLocalNotificationsPlugin)),
+        ChangeNotifierProvider(create: (context) => NotificationProvider(
+          flutterLocalNotificationsPlugin,
+          Provider.of<LanguageProvider>(context, listen: false))),
       ],
       child: MyApp(isFirstTime: isFirstTime),
     ),
@@ -143,7 +142,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    Provider.of<ThemeProvider>(context);
 
     return Consumer2<ThemeProvider, LanguageProvider>(
       builder: (context, themeProvider, languageProvider, child) {

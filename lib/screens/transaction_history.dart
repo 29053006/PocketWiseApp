@@ -268,7 +268,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(transaction.category).withOpacity(0.1),
+                  color: _getCategoryColor(transaction.category).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: _getIconForCategory(transaction.category),
@@ -348,9 +348,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       case 'Salary':
         return Colors.green.shade300;
       case 'Transport':
-        return colorScheme.primary.withOpacity(0.8);
+        return colorScheme.primary.withValues(alpha: 0.8);
       case 'Netflix':
-        return colorScheme.secondary.withOpacity(0.8);
+        return colorScheme.secondary.withValues(alpha: 0.8);
       default:
         return colorScheme.onSurfaceVariant;
     }

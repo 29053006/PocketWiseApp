@@ -54,7 +54,7 @@ class NotificationScreen extends StatelessWidget {
                   },
                   child: Card(
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    color: notif.isRead ? null : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+                    color: notif.isRead ? null : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
                     child: ListTile(
                       leading: Icon(
                         notif.titleKey.contains('budget') ? Icons.warning_amber_rounded : Icons.notifications_active_outlined,

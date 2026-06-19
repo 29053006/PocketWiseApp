@@ -8,7 +8,14 @@ import 'package:myapp/screens/dashboard_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
 import 'package:myapp/screens/statistics_screen.dart';
 import 'package:myapp/screens/transaction_history.dart';
+import 'package:myapp/screens/splash_screen.dart';
+
 import 'package:myapp/screens/welcome_screen.dart';
+
+// In MyApp build method, modify initialRoute and routes:
+// Change initialRoute to '/' and add splash route.
+// Update routes map to include splash and existing routes.
+
 import 'package:provider/provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:myapp/providers/notification_provider.dart';
@@ -166,8 +173,9 @@ class MyApp extends StatelessWidget {
           ],
           themeMode: themeProvider.themeMode,
           navigatorObservers: [routeObserver],
-          initialRoute: isFirstTime ? '/welcome' : '/main',
+          initialRoute: '/',
           routes: {
+            '/': (context) => const SplashScreen(),
             '/welcome': (context) => const WelcomeScreen(),
             '/main': (context) => const MainScreen(),
           },

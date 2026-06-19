@@ -306,7 +306,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         TextFormField(
           controller: _noteController,
           decoration: InputDecoration(
-            hintText: lang.translate(_selectedCategory = _selectedType == 'Expense' 
+            hintText: lang.translate(_selectedType == 'Expense' 
               ? 'what_was_this_for'
               : 'where_did_this_come_from'),
             filled: true,

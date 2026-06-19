@@ -154,7 +154,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           decoration: InputDecoration(
             hintText: lang.translate('name_hint'),
             filled: true,
-            fillColor: colorScheme.surfaceVariant.withValues(alpha: 0.3),
+            fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             prefixIcon: const Icon(Icons.person_outline),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),

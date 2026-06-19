@@ -80,7 +80,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     decoration: InputDecoration(
                       prefixText: '\$ ',
                       filled: true,
-                      fillColor: colorScheme.surfaceVariant.withValues(alpha: 0.3),
+                      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
 

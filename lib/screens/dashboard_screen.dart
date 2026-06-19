@@ -42,6 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
 
   Future<void> _checkSystemNotifications() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final notifProvider = Provider.of<NotificationProvider>(context, listen: false);
 
     // Solicitar permisos de sistema para Android 13+
@@ -566,6 +567,8 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
         return Icon(Icons.trending_up, color: Colors.teal.shade300);
       case 'Gift':
         return Icon(Icons.cake, color: Colors.purple.shade300);
+      case 'Other':
+        return Icon(Icons.more_horiz, color: Colors.grey.shade500);
       default:
         return Icon(Icons.category_outlined, color: Theme.of(context).colorScheme.secondary);
     }

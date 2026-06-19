@@ -171,7 +171,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           value: _selectedFilter,
           isExpanded: true,
           icon: Icon(Icons.keyboard_arrow_down, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          dropdownColor: Theme.of(context).colorScheme.surfaceVariant,
+          dropdownColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           items: ['This Month', 'Last Month', 'This Year'].map((String value) {
             return DropdownMenuItem<String>(
               value: value,
@@ -380,7 +380,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  barTouchData: BarTouchData(enabled: false),
+                  barTouchData: const BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
                     show: true,
                     leftTitles: const AxisTitles(
@@ -427,10 +427,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               break;
           }
           return SideTitleWidget(
-            child: Text(text,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
             meta: meta,
             space: 4,
+            child: Text(text,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
           );
         },
       );

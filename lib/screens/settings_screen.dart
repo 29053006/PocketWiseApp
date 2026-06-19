@@ -105,7 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               }
               return ListTile(
-                leading: CircleAvatar(
+                leading: const CircleAvatar(
                   radius: 30,
                   child: Icon(Icons.person),
                 ),
@@ -271,7 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text(lang.translate('db_cleared_msg')),
-                      duration: Duration(seconds: 2),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 }

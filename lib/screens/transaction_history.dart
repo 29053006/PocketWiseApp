@@ -182,7 +182,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
           hintText: lang.translate('search_transactions'),
           prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant),
           filled: true,
-          fillColor: Theme.of(context).colorScheme.surfaceVariant,
+          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
             borderSide: BorderSide.none,
@@ -218,7 +218,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       _applyFilter();
                     });
                   },
-                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   selectedColor: Theme.of(context).colorScheme.primary,
                   labelStyle: TextStyle(
                       color: _selectedFilter == label
@@ -333,6 +333,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         return Icon(Icons.trending_up, color: Colors.teal.shade300);
       case 'Gift':
         return Icon(Icons.cake, color: Colors.purple.shade300);
+      case 'Other':
+        return Icon(Icons.more_horiz, color: Colors.grey.shade500);
       default:
         return Icon(Icons.category_outlined, color: Theme.of(context).colorScheme.secondary);
     }
@@ -351,6 +353,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         return colorScheme.primary.withValues(alpha: 0.8);
       case 'Netflix':
         return colorScheme.secondary.withValues(alpha: 0.8);
+      case 'Other':
+        return colorScheme.outline;
       default:
         return colorScheme.onSurfaceVariant;
     }

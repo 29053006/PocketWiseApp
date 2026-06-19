@@ -106,7 +106,7 @@ class ThemeProvider with ChangeNotifier {
     final themeIndex = prefs.getInt(_themeKey) ?? ThemeMode.system.index;
     _themeMode = ThemeMode.values[themeIndex];
     
-    final colorValue = prefs.getInt(_colorKey) ?? const Color(0xFF3661F2).value;
+    final colorValue = prefs.getInt(_colorKey) ?? const Color(0xFF3661F2).toARGB32();
     _color = Color(colorValue);
     
     notifyListeners();
@@ -130,7 +130,7 @@ class ThemeProvider with ChangeNotifier {
   Future<void> setColor(Color color) async {
     _color = color;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_colorKey, color.value);
+    await prefs.setInt(_colorKey, color.toARGB32());
     notifyListeners();
   }
 }

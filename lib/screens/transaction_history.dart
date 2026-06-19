@@ -284,7 +284,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${lang.translate(transaction.category.toLowerCase())} • ${DateFormat.jm().format(transaction.date)}',
+                      '${lang.translate('cat_${transaction.category.toLowerCase()}')} • ${DateFormat.jm().format(transaction.date)}',
                       style: TextStyle(
                         color: colorScheme.onSurfaceVariant,
                         fontSize: 12,

@@ -251,7 +251,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   children: [
                     Icon(icon, color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(height: 8),
-                    Text(lang.translate(category.toLowerCase()), style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                    Text(lang.translate('cat_${category.toLowerCase()}'), style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
                 ),
               ),

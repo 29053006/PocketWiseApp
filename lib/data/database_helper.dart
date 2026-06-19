@@ -10,14 +10,21 @@ class DatabaseHelper {
   factory DatabaseHelper() => _instance;
 
   static Database? _database;
+  static Future<Database>? _dbInitFuture;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
 
+    if (_dbInitFuture != null) {
+      return _dbInitFuture!;
+    }
+
     developer.log('Initializing database...');
     final startTime = DateTime.now();
 
-    _database = await _initDB();
+    _dbInitFuture = _initDB();
+    _database = await _dbInitFuture;
+    _dbInitFuture = null;
 
     final endTime = DateTime.now();
     final duration = endTime.difference(startTime);
@@ -30,12 +37,17 @@ class DatabaseHelper {
 
   Future<Database> _initDB() async {
     String path = join(await getDatabasesPath(), 'app.db');
-    return await openDatabase(
+    final db = await openDatabase(
       path,
       version: 4, // Incremented version for notifications table
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+    // Cleanup any corrupted category entries from the previous bug
+    await db.execute(
+      "UPDATE transactions SET category = 'Other' WHERE category = 'what_was_this_for' OR category = 'where_did_this_come_from'"
+    );
+    return db;
   }
 
   Future<void> _onCreate(Database db, int version) async {

@@ -312,7 +312,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           children: [
             Container(width: 12, height: 12, color: color),
             const SizedBox(width: 12),
-            Text(lang.translate(entry.key.toLowerCase()), style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+            Text(lang.translate('cat_${entry.key.toLowerCase()}'), style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
             const Spacer(),
             SizedBox(
                 width: 90,
@@ -467,7 +467,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final sortedCategories = categoryMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final highestCategory = lang.translate(sortedCategories.first.key.toLowerCase());
+    final highestCategory = lang.translate('cat_${sortedCategories.first.key.toLowerCase()}');
     final highestAmount = sortedCategories.first.value;
     final currency = Provider.of<CurrencyProvider>(context).currency;
 
